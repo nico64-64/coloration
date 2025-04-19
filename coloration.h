@@ -1,7 +1,7 @@
 #include <ncurses.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#include <ctype.h>
 #include <signal.h>
 #include <locale.h>
 #include <time.h>
@@ -16,6 +16,10 @@
 #define VERSION "0.2.4"
 
 
+//Valeurs Macros:
+#define NBRE_CAR_MAX_PAR_LIGNE 499
+
+
 
 //Structs et enums:
 
@@ -28,15 +32,62 @@ typedef enum _tag
 	IGNORE = -1, //texte ignoré car placé avant le -DÉBUT- ou après la -FIN-
 	DEBUT = -2, // -DÉBUT-
 	FIN = -3, // -FIN-
-	//0 = aucun (ne devrait pas être assigné à aucune ligne, sauf si elles sont vides)
-	_ignore = 3, // * txt *
-	_commentaire = 4, // /* txt */
-	_pointeur = 5, // PTR_OBJET
-	_element = 6, // car: valeur
-	_override = 7, // @PTR_OBJET ...
-	_element_ovr = 8, // @car: valeur
-	_modele = 9, // modèle:
+	//aucun = 0 (ne devrait pas être assigné à aucune ligne, sauf si elles sont vides)
+	_ignore = 1, // * texte *
+	_commentaire = 2, // /* texte */
+	_pointeur = 3, // PTR_OBJET
+	_element = 4, // car: valeur
+	_override = 5, // @PTR_OBJET ...
+	_element_ovr = 6, // @car: valeur
+	_modele = 7, // modèle:
 } _tag;
+
+typedef enum _type
+//...
+{
+	_inconnu = -1, //élément de type inconnu (donc il y a une erreur soit dans la syntaxe de l'élément, soit dans le code de ce programme)
+	_pas_un_element = 0, //cette ligne n'étant pas un élément, cette enum est inutile
+	
+	//Éléments nécessitant un POINTEUR:
+	_endroit,
+	_dest,
+	_imp,
+	_d_i,
+	
+	//Éléments nécessitant du texte seul:
+	_rum,
+	_img,
+	_ouv,
+	_fer,
+	_deb,
+	_bar,
+	_int,
+	
+	//Éléments nécessitant du texte seul ou entre guillemets:
+	_nom,
+	_descr,
+	_detail,
+	
+	//Éléments nécessitant du texte entre guillemets:
+	_amb,
+	_ptv,
+	_a_d,
+	_a_a,
+	
+	//Éléments nécessitant un nombre:
+	_poids,
+	_cap,
+	_vie,
+	_conf,
+	_deg,
+	_lum,
+	_faim,
+	_etat,
+	_dist,
+	
+	//Syntaxe personalisée:
+	_cond,
+} _type;
 
 struct ligne
 //Structure d'une ligne du fichier ouvert.
@@ -44,8 +95,9 @@ struct ligne
 	ligne* precedent; //ligne précédente
 	int num; //numéro de la ligne dans le fichier
 	fpos_t pos; //position de la ligne dans le fichier
-	char txt[400]; //texte contenu par cette ligne
+	char txt[NBRE_CAR_MAX_PAR_LIGNE + 50]; //texte contenu par cette ligne
 	_tag tag; //indique ce que contient cette ligne (voir l'enum correspondante)
+	_type type; //indique le type d'élément contenu dans cette ligne (s'il y a lieu) (voir l'enum correspondante)
 	int multiligne; //indique le nombre de lignes qu'occupe cette ligne dans l'écran
 	ligne* suivant; //ligne suivante
 };
@@ -60,7 +112,7 @@ ligne DEBUT_FICHIER; //pointeur représentant le début du fichier
 ligne FIN_FICHIER; //pointeur représentant la fin du fichier
 
 //Gestion des erreurs et débogage:
-bool err_log = FALSE; //inidique si les erreurs doivent être logguées dans un fichier
+bool err_log = FALSE; //indique si les erreurs doivent être logguées dans un fichier
 char nom_ferreur[] = "erreurs.txt"; //nom du fichier de log d'erreurs (si activé)
 bool debogage = FALSE; //indique si le mode débogage est activé
 char element_debogue = 'i'; //indique ce qui est débogué (lorsque le mode débogage est activé)
@@ -105,11 +157,13 @@ bool barre_dispo = 1; //indique si un message est présentement affiché dans la
 //Fonctions:
 //Se référer au fichier .c où est implémentée la fonction pour plus de détails.
 //coloration.c:
-ligne* aller_a(); //envoie l'utilisateur à une certaine ligne du fichier (demandée par la fonction)
+ligne* aller_a (); //envoie l'utilisateur à une certaine ligne du fichier (demandée par la fonction)
 void cmd (char commande[]); //exécute une commande (en demande une si commande est NULL)
+void enregistrer (char nom_sauvegarde[]); //enregistre le buffer modifié dans un fichier dont le nom est reçu en paramètre (si NULL, un nom sera demandé)
 int erreur (int code, char message[]); //log une erreur ou en affiche une (s'il y en a une) si code = 0
 int main (int argc, char* argv[]); //contient l'ouverture et l'initialisation du programme ainsi que la main loop
 void quitter (int code); //ferme proprement le programme
+void term (); //permet à l'utilisateur d'envoyer une commande au terminal (et de consulter son output)
 //outils_logiques.c:
 int compter_lignes(ligne* ln); //compte le nombre de lignes (à l'écran) qu'occupe une ligne du fichier
 ligne* init_ligne (int num); //initialise la structure d'une ligne en la lisant dans le fichier ouvert
@@ -119,6 +173,7 @@ ligne* trouve_tag (_tag tag, ligne* depart); //renvoie la première ligne ayant 
 //outils_graphiques.c:
 int afficher_ligne(ligne* ln); //affiche une ligne du fichier à l'écran
 void bordures (); //redessine les bordures (et quelques autres choses) de l'écran
+void menu_options(); //affiche le menu des options (et gère son utilisation)
 void print_msg (char message[]); //affiche un message dans la barre d'état (ou l'efface si message est NULL)
 int rafraichir (); //redessine l'écran au complet
 

@@ -97,7 +97,89 @@ int erreur(int code, char message[])
 }
 
 
+void enregistrer(char nom_sauvegarde[])
+//Enregistre/Sauvegarde le buffer actuellement modifié.
+//Le nom du fichier peut être reçu en paramètre ou pas.
+//Si aucun nom de fichier n'est reçu en paramètre, un nom sera demandé à l'utilisateur.
+{
+	int input = EOF;
+	char nom[75] = "";
+	int pos = 0;
+	ligne* ln = DEBUT_FICHIER.suivant;
+	FILE* fsauv = NULL;
+		
+	//Prise du nom de fichier:
+	if (nom_sauvegarde == NULL)
+	{
+		//Effaçage du bas de l'écran:
+		print_msg(NULL);
+		mvhline(LINES - 1, 0, ' ', COLS);
+		
+		//Liste des options:
+		mvprintw(LINES - 1, 4, "Annuler");
+		mvprintw(LINES - 1, 16, "Aide");
+		mvprintw(LINES - 1, 25, "Visualiser");
+		
+		//Effaçage de la ligne de commande
+		attrset(COLOR_PAIR(10));
+		mvhline(LINES - 2, 0, ' ', COLS);
+		
+		//Écriture des raccourcis:
+		mvprintw(LINES - 1, 1, "^C");
+		mvprintw(LINES - 1, 13, "^A");
+		mvprintw(LINES - 1, 22, "^V");
+		
+		//Mise en forme de la ligne de commande:
+		mvprintw(LINES - 2, 1, "Nom du fichier: ");
+		
+		//Prise de la commande:
+		while (strcmp(keyname(input), "^M") != 0) //Ctrl-M = Enter
+		{
+			do
+			{input = getch();} while (input == -1);
+			
+			//Caractères imprimables (sauf les accents, mais bon...)
+			if (input >= ' ' && input <= 126 && pos < 74)
+			{nom[pos] = input; pos++; addch(input);}
+			
+			//KEY_BACKSPACE: Effacer
+			else if (input == KEY_BACKSPACE && pos > 0)
+			{pos--; mvaddch(LINES - 2, 17 + pos, ' '); move(LINES - 2, 17 + pos);}
+			
+			//Ctrl-C: Annuler
+			else if (!strcmp(keyname(input), "^C"))
+			{rafraichir(); return;}
+			
+			//Ctrl-A: Aide
+			else if (!strcmp(keyname(input), "^A"))
+			{/* À venir... */}
+		}
+		nom[pos] = '\000';
+	}
+	else
+	{strcpy(nom, nom_sauvegarde);}
+	
+	//Création du fichier de sauvegarde:
+	fsauv = fopen(nom, "w");
+	if (fsauv == NULL)
+	{print_msg("Impossible d'enregistrer le fichier."); erreur(100, "Impossible de créer le fichier de sauvegarde..."); return;}
+	
+	//Écriture du texte:
+	while (ln != NULL & ln != &FIN_FICHIER)
+	{fputs(ln->txt, fsauv); fputc('\n', fsauv); ln = ln->suivant;}
+	
+	//Fermeture du fichier de sauvegarde:
+	fclose(fsauv);
+	
+	//Écriture d'un message de confirmation:
+	rafraichir();
+	print_msg("Fichier enregistré.");
+}
+
+
 void term()
+//Donne accès au terminal via une ligne de commande.
+//Il est préférable de passer par cmd("terminal") (ou cmd()) pour appeler cette fonction.
 {
 	int input = EOF;
 	char commande[151] = "";
@@ -112,6 +194,9 @@ void term()
 	mvprintw(LINES - 1, 4, "Annuler");
 	mvprintw(LINES - 1, 16, "Aide");
 	mvprintw(LINES - 1, 25, "Options");
+	
+	if (COLS - longueur_str("Accès au terminal") > 34)
+	mvprintw(LINES - 1, COLS - longueur_str("Accès au terminal"), "Accès au terminal");
 	
 	//Effaçage de la ligne de commande
 	attrset(COLOR_PAIR(10));
@@ -146,18 +231,27 @@ void term()
 		//Ctrl-A: Aide
 		else if (!strcmp(keyname(input), "^A"))
 		{/* À venir... */}
+		
+		//Ctrl-O: Options
+		else if (!strcmp(keyname(input), "^O"))
+		{/* À venir... */}
 	}
 	commande[pos] = '\000';
 	
-	endwin();
-	system(commande);
-	printf("\nAppuyer sur \"Enter\" pour revenir à l'éditeur.");
-	getchar();
-	rafraichir();
+	endwin(); //ferme temporairement l'interface ncurses, permettant de bien voir le terminal
+	system(commande); //envoie la commande pour que la shell l'exécute
+	printf("\nAppuyer sur \"Enter\" pour revenir à l'éditeur."); //petit rappel affiché dans la console, une fois la commande exécutée
+	getchar(); //on attend un input de l'utilisateur pour lui laisser le temps de lire l'output de sa commande
+			   //J'ai choisi getchar() parce que getch() ne fonctionne pas vraiment bien dans ce contexte, et puisqu'on ne prend qu'un seul caractère (même si on entre ensuite une nouvelle commande,
+			   // les 2 getchar() seront entrecoupés par ncurses), les folies rageantes de getchar() ne devraient pas nous affecter...
+	rafraichir(); //rétablissement de l'interface ncurses et affichage du programme
 }
 
 
 ligne* aller_a()
+//Demande (grâce à une ligne de commande) un numéro de ligne à l'utilisateur et l'y emmène.
+//Renvoie un pointeur vers la ligne en question ou NULL si ce n'est pas un numéro de ligne valide.
+//Cette fonction ne devrait pas être appelée par aucune autre que cmd() (mais on peut le faire indirectement via cmd("aller a")).
 {
 	char nl[8] = "";
 	int pos = 0;
@@ -341,8 +435,14 @@ void cmd(char commande[])
 	}
 	
 	//Accéder au terminal:
-	else if (!strcmp(cmd, "terminal"))
+	else if (!strcmp(cmd, "terminal") || !strcmp(cmd, "term"))
 	{term();}
+	
+	//Enregistrer ou Sauvegarder:
+	else if (!strcmp(cmd, "enregistrer") || !strcmp(cmd, "enr"))
+	{enregistrer(NULL);}
+	else if (!strcmp(cmd, "sauvegarder") || !strcmp(cmd, "sauv"))
+	{enregistrer(nom_fichier);}
 	
 	//Aucune commande:
 	else if (cmd[0] == '\000')
@@ -386,6 +486,12 @@ int main(int argc, char* argv[])
 		start_color(); //initialise la gestion des couleurs de ncurses
 		init_pair(1, COLOR_GREEN, COLOR_BLACK); //crée une paire (#1) vert sur noir
 		init_pair(2, COLOR_YELLOW, COLOR_BLACK); //etc.
+		init_pair(3, COLOR_MAGENTA, COLOR_BLACK);
+		init_pair(4, COLOR_CYAN, COLOR_BLACK);
+		init_pair(5, COLOR_BLUE, COLOR_BLACK);
+		init_pair(6, COLOR_RED, COLOR_BLACK);
+		init_pair(7, 190, COLOR_BLACK);
+		init_pair(8, COLOR_WHITE, COLOR_RED);
 		init_pair(10, COLOR_BLACK, COLOR_WHITE);
 	}
 	else
@@ -495,6 +601,10 @@ int main(int argc, char* argv[])
 			{
 				switch (keyname(input)[1])
 				{
+				case '[': //Esc (^[) = Menu des options
+					menu_options();
+					break;
+				
 				case 'Q': //Ctrl-Q = Quitter
 					desinit();
 					quitter(0);
@@ -523,13 +633,21 @@ int main(int argc, char* argv[])
 				case 'T': //Ctrl-T = Accès au terminal
 					cmd("terminal");
 					break;
+				
+				case 'E': //Ctrl-E = Enregistrer le fichier sous
+					cmd("enregistrer");
+					break;
+				
+				case 'S': //Ctrl-S = Sauvegarder le fichier
+					cmd("sauvegarder");
+					break;
 				}
 			}
 			else if (keyname(input)[0] == 'M' && keyname(input)[1] == '-')
 			{
 				switch (keyname(input)[2])
 				{
-				case '#': //Alt-# [en mode débogage] = affiche le numéro de la ligne modifiée
+				case '#': //Alt-# [en mode débogage] = change de mode de débogage
 					if (debogage)
 					{
 						if (element_debogue == 'i')

@@ -114,15 +114,15 @@ void bordures()
 										mvprintw(LINES - 2, 159, "^W");
 										mvprintw(LINES - 1, 159, "^T");
 										
-										if (COLS >= 202)
+										if (COLS >= 203)
 										{
 											mvprintw(LINES - 2, 182, "Esc");
 											mvprintw(LINES - 1, 182, "^G ");
 											
-											if (COLS >= 228)
+											if (COLS >= 229)
 											{
-												mvprintw(LINES - 2, 204, "F1");
-												mvprintw(LINES - 1, 204, "^D");
+												mvprintw(LINES - 2, 205, "F1");
+												mvprintw(LINES - 1, 205, "^D");
 											}
 	}}}}}}}}}} //Raccourcis inutilisables: ^M (=enter), ^I (=tab), M-... (tous les Alt- ne fonctionnent pas...)
 	
@@ -179,17 +179,67 @@ void bordures()
 										mvprintw(LINES - 2, 162, "Compter Caractères");
 										mvprintw(LINES - 1, 162, "Accès au Terminal");
 										
-										if (COLS >= 202)
+										if (COLS >= 203)
 										{
 											mvprintw(LINES - 2, 186, "Menu des Options");
-											mvprintw(LINES - 1, 186, "Suspendre");
+											mvprintw(LINES - 1, 186, "Compiler la Liste");
 											
-											if (COLS >= 228)
+											if (COLS >= 229)
 											{
-												mvprintw(LINES - 2, 207, "Coloration Syntaxique");
-												mvprintw(LINES - 1, 207, "Mode Débogage");
+												mvprintw(LINES - 2, 208, "Coloration Syntaxique");
+												mvprintw(LINES - 1, 208, "Mode Débogage");
 											}
 	}}}}}}}}}}
+}
+
+
+void menu_options()
+//...
+{
+	int car = EOF; //input
+	int xi = (COLS - 40) / 2;
+	int xf = xi + 40;
+	int yi = (LINES - 2 - 10) / 2; //le -2 sert à centrer en y en excluant toutefois la barre de commandes d'en bas...
+	int yf = yi + 10;
+	
+	curs_set(0); //rend le curseur invisible
+	attrset(COLOR_PAIR(10));
+	
+	//Dessine les bordures du pop-up:
+	mvhline(yi, xi, ACS_HLINE, 40);
+	mvhline(yf, xi, ACS_HLINE, 40);
+	mvvline(yi, xi, ACS_VLINE, 10);
+	mvvline(yi, xf, ACS_VLINE, 10);
+	mvaddch(yi, xi, ACS_ULCORNER);
+	mvaddch(yf, xi, ACS_LLCORNER);
+	mvaddch(yi, xf, ACS_URCORNER);
+	mvaddch(yf, xf, ACS_LRCORNER);
+	
+	//Remplit le pop-up:
+	for (int compteur = yi + 1; compteur < yf; compteur++)
+	{mvhline(compteur, xi + 1, ' ', 39);}
+	
+	//Écrit le titre et les options:
+	mvprintw(yi, xi + 16, " Options ");
+	mvprintw(yi + 2, xi + 1 + (40 - longueur_str("Revenir à l'éditeur")) / 2, "Revenir à l'éditeur");
+	mvprintw(yi + 3, xi + 1 + (40 - longueur_str("Accéder à l'aide de l'éditeur")) / 2, "Accéder à l'aide de l'éditeur");
+	mvprintw(yi + 4, xi + 1 + (40 - longueur_str("Modifier les paramètres avancés")) / 2, "Modifier les paramètres avancés");
+	mvprintw(yi + 5, xi + 1 + (40 - longueur_str("Sauvegarder ce fichier")) / 2, "Sauvegarder ce fichier");
+	mvprintw(yi + 6, xi + 1 + (40 - longueur_str("Ouvrir un autre fichier")) / 2, "Ouvrir un autre fichier");
+	mvprintw(yi + 7, xi + 1 + (40 - longueur_str("Afficher les crédits")) / 2, "Afficher les crédits");
+	mvprintw(yi + 8, xi + 1 + (40 - longueur_str("Fermer l'éditeur")) / 2, "Fermer l'éditeur");
+	
+	standend();
+	refresh();
+	
+	while (strcmp(keyname(car), "^[") != 0)  // ^M = Enter
+	{
+		
+		car = getch();
+	}
+	
+	rafraichir();
+	curs_set(1); //remet le curseur visible
 }
 
 
@@ -199,6 +249,8 @@ int afficher_ligne(ligne* ln)
 //Renvoie le numéro de la ligne ou 0 si la ligne ne peut pas être affichée.
 //Renvoie -1 si la ligne ne s'est pas affichée au complet.
 {
+	int max = NBRE_CAR_MAX_PAR_LIGNE + strlen(ln->txt) - longueur_str(ln->txt);
+	
 	if (ln == NULL || ln == ERREUR || ln == &FIN_FICHIER || ln == &DEBUT_FICHIER || y >= LINES - 3)
 	{return 0;}
 	
@@ -212,12 +264,42 @@ int afficher_ligne(ligne* ln)
 	//Comptage du nombre de lignes (à l'écran) occupées par cette ligne:
 	compter_lignes(ln);
 	
-	//Affichage du -DÉBUT- et de la -FIN- en gras:
-	if (ln->tag == DEBUT || ln->tag == FIN)
-	{attrset(A_BOLD);}
+	//Mise en forme de la ligne selon son étiquette:
+	switch (ln->tag)
+	{
+	case DEBUT:
+	case FIN:
+		attrset(A_BOLD);
+		break;
+	
+	case _modele:
+		attrset(A_UNDERLINE);
+		break;
+	
+	case _pointeur:
+		attrset(COLOR_PAIR(4));
+		break;
+	
+	case _element:
+		attrset(COLOR_PAIR(5));
+		break;
+	
+	case _override:
+	case _element_ovr:
+		attrset(COLOR_PAIR(3) | A_BOLD);
+		break;
+	
+	case _ignore:
+		attrset(COLOR_PAIR(2));
+		break;
+	
+	case _commentaire:
+		attrset(COLOR_PAIR(1));
+		break;
+	}
 	
 	//Affichage de la ligne elle-même:
-	for (int compteur = 0; compteur < 400 && ln->txt[compteur] != '\000'; compteur++)
+	for (int compteur = 0; compteur < max && ln->txt[compteur] != '\000'; compteur++)
 	{
 		getyx(stdscr, y, x);
 		
@@ -229,36 +311,67 @@ int afficher_ligne(ligne* ln)
 		if (y >= LINES - 3)
 		{return -1;}
 		
-		//Début d'un commentaire:
-		if (ln->tag >= 0 && ln->txt[compteur - 1] == '/' && ln->txt[compteur] == '*' && getattrs(stdscr) != COLOR_PAIR(2))
+		//Coloration d'un pointeur d'objet overridé:
+		if (ln->tag == _override)
 		{
-			attron(COLOR_PAIR(1));
-			getyx(stdscr, y, x);
-			mv(y, x - 1);
-			printw("%c%c", ln->txt[compteur - 1], ln->txt[compteur]);
+			if (compteur == 1)
+			{attrset(COLOR_PAIR(4));}
+			else if (ln->txt[compteur] == '-' && ln->txt[compteur + 1] == '>')
+			{attrset(COLOR_PAIR(3) | A_BOLD);}
+			else if (compteur > 1 && ln->txt[compteur - 2] == '-' && ln->txt[compteur - 1] == '>')
+			{attrset(COLOR_PAIR(4));}
+		}
+		
+		//Coloration d'un élément:
+		if (ln->tag == _element || ln->tag == _element_ovr)
+		{
+			if (ln->tag == _element_ovr && compteur == 1)
+			{attrset(COLOR_PAIR(5));}
+			else if (compteur > 0 && ln->txt[compteur - 1] == ':')
+			{
+				if (ln->type >= _endroit && ln->type <= _d_i)
+				{attrset(COLOR_PAIR(4));} //POINTEUR
+				else if (ln->type >= _poids && ln->type <= _dist)
+				{attrset(COLOR_PAIR(6));} //nombre
+				else
+				{standend();}
+			}
+			else if (ln->type >= _nom && ln->type <= _a_a && compteur > 1)
+			{
+				if (ln->txt[compteur] == '"' && ln->txt[compteur - 1] == ' ' && (ln->txt[compteur + 1] == ' ' || ln->txt[compteur+ 1] == '\000'))
+				{attrset(COLOR_PAIR(7) | A_BOLD);}
+				else if (ln->txt[compteur] == ' ' && ln->txt[compteur - 1] == '"' && ln->txt[compteur - 2] == ' ')
+				{standend();}
+			}
 		}
 		
 		//Fin d'un commentaire:
-		else if (ln->tag >= 0 && ln->txt[compteur - 1] == '*' && ln->txt[compteur] == '/' && getattrs(stdscr) == COLOR_PAIR(1))
+		if (compteur > 0 && ln->tag == _commentaire && ln->txt[compteur - 1] == '*' && ln->txt[compteur] == '/')
 		{printw("%c", ln->txt[compteur]); standend();}
 		
-		//Début/Fin d'une remarque ignorée:
-		else if (ln->tag >= 0 && ln->txt[compteur] == '"' && ln->txt[compteur - 1] != '\\' && getattrs(stdscr) != (COLOR_PAIR(1)))
+		//Fin d'une remarque ignorée:
+		else if (compteur > 0 && ln->tag == _ignore && ln->txt[compteur] == '*' && ln->txt[compteur - 1] == ' ' && (ln->txt[compteur + 1] == ' ' || ln->txt[compteur + 1] == '\000'))
+		{printw("%c", ln->txt[compteur]); attroff(COLOR_PAIR(2));}
+		
+		//Accolades d'une condition:
+		else if (ln->type == _cond && compteur > 0 && (ln->txt[compteur] == '{' || ln->txt[compteur] == '}') && ln->txt[compteur - 1] == ' ' && (ln->txt[compteur + 1] == ' ' || ln->txt[compteur + 1] == '\000'))
 		{
-			if (getattrs(stdscr) != COLOR_PAIR(2))
-			{attron(COLOR_PAIR(2)); printw("%c", ln->txt[compteur]);}
-			else
-			{printw("%c", ln->txt[compteur]); attroff(COLOR_PAIR(2));}
+			attrset(COLOR_PAIR(7) | A_BOLD);
+			printw("%c", ln->txt[compteur]);
+			standend();
 		}
 		
 		//Aucune manipulation spéciale nécessaire:
 		else
 		{printw("%c", ln->txt[compteur]);} //addch(ln->txt[compteur]) n'affiche pas les accents...
-		
-		refresh();
 	}
 	
+	//Ligne trop longue:
+	if (longueur_str(ln->txt) > NBRE_CAR_MAX_PAR_LIGNE)
+	{addch(' '); attrset(COLOR_PAIR(8) | A_BOLD); printw("..."); standend();}
+	
 	//Fin de la ligne (nouvelle ligne):
+	refresh();
 	standend();
 	y++;
 	mv(y, 4);
