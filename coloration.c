@@ -120,6 +120,9 @@ void enregistrer(char nom_sauvegarde[])
 		mvprintw(LINES - 1, 16, "Aide");
 		mvprintw(LINES - 1, 25, "Visualiser");
 		
+		if (COLS - longueur_str("Enregistrement ") > 34)
+		{mvprintw(LINES - 1, COLS - longueur_str("Enregistrement "), "Enregistrement ");}
+		
 		//Effaçage de la ligne de commande
 		attrset(COLOR_PAIR(10));
 		mvhline(LINES - 2, 0, ' ', COLS);
@@ -165,8 +168,14 @@ void enregistrer(char nom_sauvegarde[])
 	{print_msg("Impossible d'enregistrer le fichier."); erreur(100, "Impossible de créer le fichier de sauvegarde..."); return;}
 	
 	//Écriture du texte:
+	fputs(ln->txt, fsauv);
+	ln = ln->suivant;
 	while (ln != NULL & ln != &FIN_FICHIER)
-	{fputs(ln->txt, fsauv); fputc('\n', fsauv); ln = ln->suivant;}
+	{
+		fputc('\n', fsauv);
+		fputs(ln->txt, fsauv);
+		ln = ln->suivant;
+	}
 	
 	//Fermeture du fichier de sauvegarde:
 	fclose(fsauv);
@@ -195,8 +204,8 @@ void term()
 	mvprintw(LINES - 1, 16, "Aide");
 	mvprintw(LINES - 1, 25, "Options");
 	
-	if (COLS - longueur_str("Accès au terminal") > 34)
-	mvprintw(LINES - 1, COLS - longueur_str("Accès au terminal"), "Accès au terminal");
+	if (COLS - longueur_str("Accès au terminal ") > 34)
+	{mvprintw(LINES - 1, COLS - longueur_str("Accès au terminal "), "Accès au terminal ");}
 	
 	//Effaçage de la ligne de commande
 	attrset(COLOR_PAIR(10));
@@ -242,7 +251,7 @@ void term()
 	system(commande); //envoie la commande pour que la shell l'exécute
 	printf("\nAppuyer sur \"Enter\" pour revenir à l'éditeur."); //petit rappel affiché dans la console, une fois la commande exécutée
 	getchar(); //on attend un input de l'utilisateur pour lui laisser le temps de lire l'output de sa commande
-			   //J'ai choisi getchar() parce que getch() ne fonctionne pas vraiment bien dans ce contexte, et puisqu'on ne prend qu'un seul caractère (même si on entre ensuite une nouvelle commande,
+			   //J'ai choisi d'utiliser getchar() parce que getch() ne fonctionne pas vraiment bien dans ce contexte, et puisqu'on ne prend qu'un seul caractère (même si on entre ensuite une nouvelle commande,
 			   // les 2 getchar() seront entrecoupés par ncurses), les folies rageantes de getchar() ne devraient pas nous affecter...
 	rafraichir(); //rétablissement de l'interface ncurses et affichage du programme
 }
@@ -313,6 +322,129 @@ ligne* aller_a()
 		ln_mod = trouve_ligne(num);
 		return ln_mod;
 	}
+}
+
+
+void menu_options()
+//Affiche le menu des options et gère son utilisation.
+//Appelé lorsque l'utilisateur appuie sur Esc.
+{
+	int car = KEY_RESIZE; //input (doit être initialisé à KEY_RESIZE pour que le pop-up soit dessiné)
+	int xi = (COLS - 40) / 2;
+	int xf = xi + 40;
+	int yi = (LINES - 2 - 10) / 2; //le -2 sert à centrer en y en excluant toutefois la barre de commandes d'en bas...
+	int yf = yi + 10;
+	int selection = 0; //indique quelle entrée est présentement sélectionnée
+	
+	curs_set(0); //rend le curseur invisible
+	
+	while (car != 27) //27 = Esc.
+	{
+		switch (car)
+		{
+		case KEY_RESIZE:
+			//Trouve si la fenêtre est assez grande pour afficher le pop-up:
+			if (COLS <= 40 || LINES <= 10)
+			{
+				rafraichir();
+				print_msg("Ce terminal est trop petit pour afficher le menu des options.");
+				curs_set(1);
+				return;
+			}
+			
+			//Trouve les nouvelles coordonnées du pop-up:
+			xi = (COLS - 40) / 2;
+			xf = xi + 40;
+			yi = (LINES - 2 - 10) / 2;
+			yf = yi + 10;
+			
+			//Redessine les bordures du pop-up:
+			rafraichir(); //redessine la fenêtre en arrière du pop-up
+			attrset(COLOR_PAIR(10)); //noir sur blanc
+			mvhline(yi, xi, ACS_HLINE, 40);
+			mvhline(yf, xi, ACS_HLINE, 40);
+			mvvline(yi, xi, ACS_VLINE, 10);
+			mvvline(yi, xf, ACS_VLINE, 10);
+			mvaddch(yi, xi, ACS_ULCORNER);
+			mvaddch(yf, xi, ACS_LLCORNER);
+			mvaddch(yi, xf, ACS_URCORNER);
+			mvaddch(yf, xf, ACS_LRCORNER);
+			
+			//Remplit le pop-up:
+			for (int compteur = yi + 1; compteur < yf; compteur++)
+			{mvhline(compteur, xi + 1, ' ', 39);}
+			
+			//Écrit le titre et liste les options:
+			mvprintw(yi, xi + 16, " Options "); //titre
+			liste_options(selection); //liste les options et "surligne" la bonne
+			refresh(); //affichage du tout
+			break;
+		
+		case KEY_DOWN:
+			if (selection < 6)
+			{selection++;}
+			else
+			{selection = 0;}
+			liste_options(selection);
+			break;
+		
+		case KEY_UP:
+			if (!selection)
+			{selection = 6;}
+			else
+			{selection--;}
+			liste_options(selection);
+			break;
+		
+		default:
+			if (!strcmp(keyname(car), "^M")) //^M = Enter
+			{
+				switch (selection)
+				{
+				case 0: //retour à l'éditeur
+					rafraichir();
+					curs_set(1);
+					return;
+				
+				case 1: //Accéder à l'aide
+					curs_set(1);
+					cmd("aide");
+					rafraichir();
+					return;
+				
+				case 2: //Modifier les paramètres avancés
+					//Paramètres avancés...
+					break;
+				
+				case 3: //Sauvegarder
+					cmd("sauvegarder");
+					curs_set(1);
+					return;
+				
+				case 4: //Ouvrir un autre fichier
+					//Ouvrir...
+					break;
+				
+				case 5: //Afficher les crédits
+					//Crédits...
+					break;
+				
+				case 6: //Fermer le programme
+					quitter(0);
+					break;
+				}
+			}
+			else if (!strcmp(keyname(car), "^A"))
+			{curs_set(1); cmd("aide"); rafraichir(); return;}
+			else if (!strcmp(keyname(car), "^Q"))
+			{quitter(0);}
+		}
+		
+		car = getch();
+	}
+	
+	rafraichir(); //reddessine la fenêtre sans le pop-up
+	curs_set(1); //remet le curseur visible
 }
 
 
@@ -444,6 +576,10 @@ void cmd(char commande[])
 	else if (!strcmp(cmd, "sauvegarder") || !strcmp(cmd, "sauv"))
 	{enregistrer(nom_fichier);}
 	
+	//Ouvir le menu des options:
+	else if (!strcmp(cmd, "menu") || !strcmp(cmd, "options"))
+	{menu_options();}
+	
 	//Aucune commande:
 	else if (cmd[0] == '\000')
 	{rafraichir();}
@@ -458,6 +594,7 @@ int main(int argc, char* argv[])
 {
 	int input = EOF; //caractère reçu en input (doit être déclaré int pour accepter les accents, Ctrl-car., etc.)
 	int buffint = 0;
+	bool skip_input = FALSE;
 	
 	
 	//Erreurs d'invocation:
@@ -512,8 +649,13 @@ int main(int argc, char* argv[])
 		{msg_printf("Ligne #%d.%d", ln_mod->num, pos_y);}
 		
 		//Prise de l'input:
-		do
-		{input = getch();} while (input == -1);
+		if (!skip_input)
+		{
+			do
+			{input = getch();} while (input == -1);
+		}
+		else
+		{skip_input = FALSE;}
 		
 		//Réaffichage de la barre si nécessaire:
 		if (!barre_dispo)
@@ -565,7 +707,11 @@ int main(int argc, char* argv[])
 				{premiere_ligne++; rafraichir(); y += 1 - trouve_ligne(premiere_ligne - 1)->multiligne;} //ce calcul permettant de compenser le décalage causé par une ancienne 1ère ligne multiligne DOIT être fait après rafraichir()!
 				else
 				{y++;}
-				mv(y, 4);
+				
+				if (x - 3 > longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5))
+				{mv(y, 4 + longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5));}
+				else
+				{mv(y, x);}
 			}
 			break;
 		
@@ -580,11 +726,77 @@ int main(int argc, char* argv[])
 				{pos_y--;}
 				
 				if (y == 1) //on est à la première ligne sur l'écran
-				{premiere_ligne--; rafraichir(); y += ln_mod->multiligne - 1;} //ce calcul permettant de placer le curseur à la dernière ligne de la "ligne" DOIT être fait après rafraichir()!
+				{premiere_ligne--; rafraichir(); y += ln_mod->multiligne - 1;} //Ce calcul permettant de placer le curseur à la dernière ligne de la "ligne" DOIT être fait après rafraichir()!
 				else
 				{y--;}
-				mv(y, 4);
+				
+				if (x - 3 > longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5))
+				{mv(y, 4 + longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5));}
+				else
+				{mv(y, x);}
 			}
+			break;
+		
+		case KEY_LEFT: //flèche vers la gauche
+			if (x <= 4)
+			{
+				if (pos_y != 1)
+				{y--; mv(y, COLS - 2); pos_y--;}
+				else if (ln_mod->num == 1)
+				{print_msg("Vous avez atteint le début du fichier.");}
+				else if (y == 1)
+				{
+					ln_mod = ln_mod->precedent;
+					premiere_ligne--;
+					rafraichir();
+					y += ln_mod->multiligne - 1; //Ce calcul permettant de placer le curseur à la dernière ligne de la "ligne" DOIT être fait après rafraichir()!
+					mv(y, 4 + longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5));
+					pos_y = ln_mod->multiligne;
+				}
+				else
+				{
+					ln_mod = ln_mod->precedent;
+					y--;
+					mv(y, 4 + longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5));
+					pos_y = ln_mod->multiligne;
+				}
+			}
+			else
+			{mv(y, x - 1);}
+			break;
+		
+		case KEY_RIGHT: //flèche vers la droite
+			if (x == COLS - 2 && pos_y < ln_mod->multiligne) //multiligne
+			{
+				if (y == LINES - 4) //on est sur la dernière ligne de l'écran
+				{
+					premiere_ligne++;
+					rafraichir();
+					y += 1 - trouve_ligne(premiere_ligne - 1)->multiligne; //Ce calcul permettant de compenser le décalage causé par une ancienne 1ère ligne multiligne DOIT être fait après rafraichir()!
+					mv(y, 4);
+					pos_y++;
+				}
+				else
+				{y++; mv(y, 4); pos_y++;}
+			}
+			else if (x - 3 > longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5) && pos_y == ln_mod->multiligne) //nouvelle ligne
+			{
+				if (ln_mod->suivant == &FIN_FICHIER && pos_y == ln_mod->multiligne)
+				{print_msg("Vous avez atteint la fin du fichier.");}
+				else if (y == LINES - 4) //on est sur la dernière ligne de l'écran
+				{
+					premiere_ligne++;
+					rafraichir();
+					y += 1 - trouve_ligne(premiere_ligne - 1)->multiligne; //Ce calcul permettant de compenser le décalage causé par une ancienne 1ère ligne multiligne DOIT être fait après rafraichir()!
+					mv(y, 4);
+					pos_y = 1;
+					ln_mod = ln_mod->suivant;
+				}
+				else
+				{y++; mv(y, 4); pos_y = 1; ln_mod = ln_mod->suivant;}
+			}
+			else
+			{mv(y, x + 1);}
 			break;
 		
 		case KEY_SHOME: //Shift-Home = aller au -DÉBUT-
@@ -613,6 +825,10 @@ int main(int argc, char* argv[])
 				case 'R': //Ctrl-R = Rafraichir
 					rafraichir();
 					erreur(0, "..."); //Profitons-en pour afficher les erreurs qui traineraient dans le buffer...
+					break;
+				
+				case 'A': //Ctrl-A = Aide
+					cmd("aide");
 					break;
 				
 				case 'D': //Ctrl-D = Débogage
@@ -644,10 +860,11 @@ int main(int argc, char* argv[])
 				}
 			}
 			else if (keyname(input)[0] == 'M' && keyname(input)[1] == '-')
+			//Alt-...
 			{
 				switch (keyname(input)[2])
 				{
-				case '#': //Alt-# [en mode débogage] = change de mode de débogage
+				case '#': //Alt-# (en mode débogage) = changer de mode de débogage
 					if (debogage)
 					{
 						if (element_debogue == 'i')
@@ -657,6 +874,19 @@ int main(int argc, char* argv[])
 						else
 						{element_debogue = 'i'; print_msg("Mode de débogage: input");}
 					}
+					break;
+				}
+			}
+			else if (keyname(input)[0] == 'K' && keyname(input)[1] == 'E' && keyname(input)[2] == 'Y' && keyname(input)[3] == '_' && keyname(input)[4] == 'F')
+			//F1 à F12
+			{
+				switch (keyname(input)[6])
+				{
+				case '1': //F1 = Activation/Désactivation de la coloration syntaxique
+					if (!coloration_syntaxique)
+					{coloration_syntaxique = 1; rafraichir(); print_msg("Coloration syntaxique activée.");}
+					else
+					{coloration_syntaxique = 0; rafraichir(); print_msg("Coloration syntaxique désactivée.");}
 					break;
 				}
 			}

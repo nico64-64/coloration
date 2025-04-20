@@ -13,7 +13,7 @@
 
 
 //Version du programme:
-#define VERSION "0.2.4"
+#define VERSION "0.2.5"
 
 
 //Valeurs Macros:
@@ -24,9 +24,10 @@
 //Structs et enums:
 
 typedef enum _tag _tag;
+typedef enum _type _type;
 typedef struct ligne ligne;
 
-typedef enum _tag
+enum _tag
 //Étiquette identifiant le contenu d'une ligne du fichier ouvert.
 {
 	IGNORE = -1, //texte ignoré car placé avant le -DÉBUT- ou après la -FIN-
@@ -40,10 +41,10 @@ typedef enum _tag
 	_override = 5, // @PTR_OBJET ...
 	_element_ovr = 6, // @car: valeur
 	_modele = 7, // modèle:
-} _tag;
+};
 
-typedef enum _type
-//...
+enum _type
+//Étiquette plus précise identifiant le type d'élément (si cette ligne en est un, au sens de sa valeur dans _tag) contenu sur une ligne du fichier ouvert.
 {
 	_inconnu = -1, //élément de type inconnu (donc il y a une erreur soit dans la syntaxe de l'élément, soit dans le code de ce programme)
 	_pas_un_element = 0, //cette ligne n'étant pas un élément, cette enum est inutile
@@ -86,8 +87,8 @@ typedef enum _type
 	_dist,
 	
 	//Syntaxe personalisée:
-	_cond,
-} _type;
+	_cond
+};
 
 struct ligne
 //Structure d'une ligne du fichier ouvert.
@@ -132,6 +133,7 @@ int pos_y = 1; //position en y dans la "ligne" modifiée par le curseur (soit le
 ligne* ln_mod; //ligne modifiée présentement (ligne où se trouve le curseur)
 
 //Autres:
+bool coloration_syntaxique = 1; //indique si la coloration syntaxique est activée
 bool barre_dispo = 1; //indique si un message est présentement affiché dans la barre d'état (0 = occupée, 1 = libre)
 
 
@@ -162,6 +164,7 @@ void cmd (char commande[]); //exécute une commande (en demande une si commande 
 void enregistrer (char nom_sauvegarde[]); //enregistre le buffer modifié dans un fichier dont le nom est reçu en paramètre (si NULL, un nom sera demandé)
 int erreur (int code, char message[]); //log une erreur ou en affiche une (s'il y en a une) si code = 0
 int main (int argc, char* argv[]); //contient l'ouverture et l'initialisation du programme ainsi que la main loop
+void menu_options (); //affiche le menu des options (et gère son utilisation)
 void quitter (int code); //ferme proprement le programme
 void term (); //permet à l'utilisateur d'envoyer une commande au terminal (et de consulter son output)
 //outils_logiques.c:
@@ -173,7 +176,7 @@ ligne* trouve_tag (_tag tag, ligne* depart); //renvoie la première ligne ayant 
 //outils_graphiques.c:
 int afficher_ligne(ligne* ln); //affiche une ligne du fichier à l'écran
 void bordures (); //redessine les bordures (et quelques autres choses) de l'écran
-void menu_options(); //affiche le menu des options (et gère son utilisation)
+void liste_options (int selection); //affiche la liste des options du menu des options et surligne l'option reçue en paramètre
 void print_msg (char message[]); //affiche un message dans la barre d'état (ou l'efface si message est NULL)
 int rafraichir (); //redessine l'écran au complet
 

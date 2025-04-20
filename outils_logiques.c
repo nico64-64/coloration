@@ -21,7 +21,9 @@ int longueur_str(char str[])
 		multicar[0] = str[compteur - 1];
 		multicar[1] = str[compteur];
 		if (!strcmp(multicar, "é") || !strcmp(multicar, "è") || !strcmp(multicar, "ê") || !strcmp(multicar, "ë") || !strcmp(multicar, "à") || !strcmp(multicar, "â") || !strcmp(multicar, "ä") || !strcmp(multicar, "î") \
-			|| !strcmp(multicar, "ï") || !strcmp(multicar, "ô") || !strcmp(multicar, "ö") || !strcmp(multicar, "ù") || !strcmp(multicar, "û") || !strcmp(multicar, "ç"))
+			|| !strcmp(multicar, "ï") || !strcmp(multicar, "ô") || !strcmp(multicar, "ö") || !strcmp(multicar, "ù") || !strcmp(multicar, "û") || !strcmp(multicar, "ç") || !strcmp(multicar, "É") || !strcmp(multicar, "È") \
+			|| !strcmp(multicar, "Ê") || !strcmp(multicar, "Ë") || !strcmp(multicar, "À") || !strcmp(multicar, "Â") || !strcmp(multicar, "Ä") || !strcmp(multicar, "Î") || !strcmp(multicar, "Ï") || !strcmp(multicar, "Ô") \
+			|| !strcmp(multicar, "Ö") || !strcmp(multicar, "Ù") || !strcmp(multicar, "Û") || !strcmp(multicar, "Ç"))
 		{nbre_car--;}
 		nbre_car++;
 	}

@@ -193,53 +193,29 @@ void bordures()
 }
 
 
-void menu_options()
-//...
+void liste_options(int selection)
+//Affiche la liste des options dans le pop-up du menu des options.
+//Reçoit en paramètre l'option présentement sélectionnée, qui sera surlignée.
+//Cette fonction ne doit être appelée que par menu_options!
 {
-	int car = EOF; //input
-	int xi = (COLS - 40) / 2;
-	int xf = xi + 40;
+	int xi = (COLS - 40) / 2 - 1; //ce xi est décalé de -1 par rapport au vrai xi de menu_options, et c'est tout-à-fait normal et voulu!
 	int yi = (LINES - 2 - 10) / 2; //le -2 sert à centrer en y en excluant toutefois la barre de commandes d'en bas...
-	int yf = yi + 10;
+	char options[7][35] = {"Revenir à l'éditeur", "Accéder à l'aide de l'éditeur", "Modifier les paramètres avancés", "Sauvegarder ce fichier", "Ouvrir un autre fichier", "Afficher les crédits", "Fermer l'éditeur"};
 	
-	curs_set(0); //rend le curseur invisible
-	attrset(COLOR_PAIR(10));
-	
-	//Dessine les bordures du pop-up:
-	mvhline(yi, xi, ACS_HLINE, 40);
-	mvhline(yf, xi, ACS_HLINE, 40);
-	mvvline(yi, xi, ACS_VLINE, 10);
-	mvvline(yi, xf, ACS_VLINE, 10);
-	mvaddch(yi, xi, ACS_ULCORNER);
-	mvaddch(yf, xi, ACS_LLCORNER);
-	mvaddch(yi, xf, ACS_URCORNER);
-	mvaddch(yf, xf, ACS_LRCORNER);
-	
-	//Remplit le pop-up:
-	for (int compteur = yi + 1; compteur < yf; compteur++)
-	{mvhline(compteur, xi + 1, ' ', 39);}
-	
-	//Écrit le titre et les options:
-	mvprintw(yi, xi + 16, " Options ");
-	mvprintw(yi + 2, xi + 1 + (40 - longueur_str("Revenir à l'éditeur")) / 2, "Revenir à l'éditeur");
-	mvprintw(yi + 3, xi + 1 + (40 - longueur_str("Accéder à l'aide de l'éditeur")) / 2, "Accéder à l'aide de l'éditeur");
-	mvprintw(yi + 4, xi + 1 + (40 - longueur_str("Modifier les paramètres avancés")) / 2, "Modifier les paramètres avancés");
-	mvprintw(yi + 5, xi + 1 + (40 - longueur_str("Sauvegarder ce fichier")) / 2, "Sauvegarder ce fichier");
-	mvprintw(yi + 6, xi + 1 + (40 - longueur_str("Ouvrir un autre fichier")) / 2, "Ouvrir un autre fichier");
-	mvprintw(yi + 7, xi + 1 + (40 - longueur_str("Afficher les crédits")) / 2, "Afficher les crédits");
-	mvprintw(yi + 8, xi + 1 + (40 - longueur_str("Fermer l'éditeur")) / 2, "Fermer l'éditeur");
-	
-	standend();
-	refresh();
-	
-	while (strcmp(keyname(car), "^[") != 0)  // ^M = Enter
+	attrset(COLOR_PAIR(10)); //noir sur blanc
+	for (int compteur = 0; compteur < 7; compteur++)
 	{
-		
-		car = getch();
+		if (selection == compteur)
+		{
+			standend(); //blanc sur noir
+			mvprintw(yi + compteur + 2, xi + (40 - longueur_str(options[compteur])) / 2, " > %s ", options[compteur]);
+			attrset(COLOR_PAIR(10)); //noir sur blanc
+		}
+		else
+		{mvprintw(yi + compteur + 2, xi + (40 - longueur_str(options[compteur])) / 2, "  %s  ", options[compteur]);}
 	}
 	
-	rafraichir();
-	curs_set(1); //remet le curseur visible
+	standend(); //blanc sur noir
 }
 
 
@@ -265,37 +241,40 @@ int afficher_ligne(ligne* ln)
 	compter_lignes(ln);
 	
 	//Mise en forme de la ligne selon son étiquette:
-	switch (ln->tag)
+	if (coloration_syntaxique)
 	{
-	case DEBUT:
-	case FIN:
-		attrset(A_BOLD);
-		break;
-	
-	case _modele:
-		attrset(A_UNDERLINE);
-		break;
-	
-	case _pointeur:
-		attrset(COLOR_PAIR(4));
-		break;
-	
-	case _element:
-		attrset(COLOR_PAIR(5));
-		break;
-	
-	case _override:
-	case _element_ovr:
-		attrset(COLOR_PAIR(3) | A_BOLD);
-		break;
-	
-	case _ignore:
-		attrset(COLOR_PAIR(2));
-		break;
-	
-	case _commentaire:
-		attrset(COLOR_PAIR(1));
-		break;
+		switch (ln->tag)
+		{
+		case DEBUT:
+		case FIN:
+			attrset(A_BOLD);
+			break;
+		
+		case _modele:
+			attrset(A_UNDERLINE);
+			break;
+		
+		case _pointeur:
+			attrset(COLOR_PAIR(4));
+			break;
+		
+		case _element:
+			attrset(COLOR_PAIR(5));
+			break;
+		
+		case _override:
+		case _element_ovr:
+			attrset(COLOR_PAIR(3) | A_BOLD);
+			break;
+		
+		case _ignore:
+			attrset(COLOR_PAIR(2));
+			break;
+		
+		case _commentaire:
+			attrset(COLOR_PAIR(1));
+			break;
+		}
 	}
 	
 	//Affichage de la ligne elle-même:
@@ -312,7 +291,7 @@ int afficher_ligne(ligne* ln)
 		{return -1;}
 		
 		//Coloration d'un pointeur d'objet overridé:
-		if (ln->tag == _override)
+		if (ln->tag == _override && coloration_syntaxique)
 		{
 			if (compteur == 1)
 			{attrset(COLOR_PAIR(4));}
@@ -323,7 +302,7 @@ int afficher_ligne(ligne* ln)
 		}
 		
 		//Coloration d'un élément:
-		if (ln->tag == _element || ln->tag == _element_ovr)
+		if ((ln->tag == _element || ln->tag == _element_ovr) && coloration_syntaxique)
 		{
 			if (ln->tag == _element_ovr && compteur == 1)
 			{attrset(COLOR_PAIR(5));}
@@ -346,15 +325,15 @@ int afficher_ligne(ligne* ln)
 		}
 		
 		//Fin d'un commentaire:
-		if (compteur > 0 && ln->tag == _commentaire && ln->txt[compteur - 1] == '*' && ln->txt[compteur] == '/')
+		if (compteur > 0 && ln->tag == _commentaire && ln->txt[compteur - 1] == '*' && ln->txt[compteur] == '/' && coloration_syntaxique)
 		{printw("%c", ln->txt[compteur]); standend();}
 		
 		//Fin d'une remarque ignorée:
-		else if (compteur > 0 && ln->tag == _ignore && ln->txt[compteur] == '*' && ln->txt[compteur - 1] == ' ' && (ln->txt[compteur + 1] == ' ' || ln->txt[compteur + 1] == '\000'))
+		else if (compteur > 0 && ln->tag == _ignore && ln->txt[compteur] == '*' && ln->txt[compteur - 1] == ' ' && (ln->txt[compteur + 1] == ' ' || ln->txt[compteur + 1] == '\000') && coloration_syntaxique)
 		{printw("%c", ln->txt[compteur]); attroff(COLOR_PAIR(2));}
 		
 		//Accolades d'une condition:
-		else if (ln->type == _cond && compteur > 0 && (ln->txt[compteur] == '{' || ln->txt[compteur] == '}') && ln->txt[compteur - 1] == ' ' && (ln->txt[compteur + 1] == ' ' || ln->txt[compteur + 1] == '\000'))
+		else if (ln->type == _cond && compteur > 0 && (ln->txt[compteur] == '{' || ln->txt[compteur] == '}') && ln->txt[compteur - 1] == ' ' && (ln->txt[compteur + 1] == ' ' || ln->txt[compteur + 1] == '\000') && coloration_syntaxique)
 		{
 			attrset(COLOR_PAIR(7) | A_BOLD);
 			printw("%c", ln->txt[compteur]);
