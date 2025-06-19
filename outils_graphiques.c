@@ -56,9 +56,9 @@ void bordures()
 	attrset(COLOR_PAIR(10)); //noir sur blanc
 	mvhline(0, 0, ' ', COLS); //dessine une ligne horizontale
 	if (COLS / 2 > longueur_str(nom_fichier) / 2 + longueur_str("Coloration X.X.X ") + 2)
-	{mvprintw(0, COLS - longueur_str("Coloration X.X.X "), "Coloration %s", VERSION);} //Nom de l'éditeur en haut à gauche
+	{mvprintw(0, COLS - longueur_str("Coloration X.X.X "), "Coloration %s", VERSION);} //Nom de l'éditeur en haut à droite
 	else if (COLS / 2 > longueur_str(nom_fichier) / 2 + longueur_str("Col ") + 2)
-	{mvprintw(0, COLS - longueur_str("Col "), "Col ");} //Nom abrégé en haut à gauche (manque de place)
+	{mvprintw(0, COLS - longueur_str("Col "), "Col ");} //Nom abrégé en haut à droite (manque de place)
 	mvaddstrc(0, nom_fichier); //affiche le nom du fichier modifié
 	
 	mvvline(1, 0, ' ', LINES - 3); //dessine une ligne verticale
