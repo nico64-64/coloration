@@ -8,7 +8,6 @@
 
 
 #ifndef _COLORATION_H
-
 #define _COLORATION_H
 
 
@@ -20,12 +19,12 @@
 #define NBRE_CAR_MAX_PAR_LIGNE 499
 
 
-
 //Structs et enums:
 
 typedef enum _tag _tag;
 typedef enum _type _type;
 typedef struct commande commande;
+typedef struct p_avance p_avance;
 typedef struct ligne ligne;
 
 enum _tag
@@ -115,6 +114,15 @@ struct commande
 	int cmd_liees[3];
 };
 
+struct p_avance
+//Structure d'un paramètre avancé:
+{
+	char descr[200];
+	char type; //0 = aucun, i = int, b = bool, c = char, s = string
+	int* ptr_int;
+	char* ptr_str;
+};
+
 
 //Variables Globales:
 
@@ -153,22 +161,36 @@ commande cmds[] =
 		"Redessine l'écran de Coloration sur le terminal, permettant parfois de régler quelques petits glitchs.\nAffiche aussi tout message d'erreur en attente dans la barre d'état.", {24, 0, 0}},
 	{24, "Débogage", "^D", "Activer ou désactiver le mode débogage.", "Appuyer sur Ctrl-D pour activer/désactiver le mode débogage.\nVous pouvez aussi changer de mode de débogage en appuyant sur M-# (Alt-Car 3). Il y a 3 modes de débogage: \"input\" (affiche le nom de la touche appuyée), \"position\" (affiche la position du curseur dans le fichier) et \"input (raw)\" (donne la valeur numérique de la touche appuyée).\nCette fonctionnalité est une des seules à ne pas avoir de commande correspondante. Ctrl-D est la seule manière de l'activer.", {23, 0, 0}},
 	{25, "Col. syntaxique", "F1", "Activer ou désactiver la coloration syntaxique.", "Active/Désactive la coloration syntaxique.\nCette coloration suit la syntaxe d'un fichier de liste d'objets source du projet \"text-adventure game\" (voir \"Compiler la liste\").\nAssurez-vous d'appuyer sur Fn en même temps que F1 pour que cela fonctionne.\nLa coloration syntaxique suivant la syntaxe attendue, elle n'apparaitra pas si le fichier n'est pas syntaxiquement conforme (voir \"Aller au -DÉBUT-\" et \"Aller à la -FIN-\").", {13, 21, 22}},
-	{26, "Paramètres avancés", "", "Modifier certains paramètres avancés.", "Fonctionnalité à venir.\nÀ Faire!", {2, 1, 0}},
+	{26, "Paramètres avancés", "", "Modifier certains paramètres avancés.", "Accessible par le menu des options uniquement, les paramètres avancés comprennent quelques options de débogage ainsi que quelque variables internes modifiables par l'utilisateur.\nLa modification de ces paramètres n'est pas recommandée.", {2, 1, 0}},
 };
 const int nbre_cmds = 26;
+
+//Paramètres avancés:
+bool err_log = FALSE; //indique si les erreurs doivent être logguées dans un fichier
+char nom_ferreur[50] = "erreurs.txt"; //nom du fichier de log d'erreurs (si activé)
+char cmd_compiler_liste[100] = "./createur_liste "; //commande permettant de compiler la liste qu'est le document en cours de modification (le nom du fichier sera appendé à son ouverture)
+char nom_fconfig[50] = "config.txt"; //nom du fichier de configuration de l'éditeur
+//Liste des paramètres avancés:
+p_avance p_avances[] =
+{
+	{"", '0', NULL, NULL}, //Ce faux paramètre avancé doit toujours rester vide. Il sert uniquement à décaler la liste pour qu'elle commence à 1.
+	{"Logguer les erreurs dans un fichier txt.", 'b', (int*) &err_log, NULL},
+	{"Nom et emplacement du fichier de log des erreurs (si activé).", 's', NULL, &nom_ferreur[0]},
+	{"Commande envoyée pour \"compiler la liste\" (voir manuel d'aide).", 's', NULL, &cmd_compiler_liste[0]},
+	{"Nom et emplacement du fichier de configuration de l'éditeur. (À FAIRE)", 's', NULL, &nom_fconfig[0]},
+};
+const int nbre_p_avances = 4;
 
 //Symboles internes:
 void* ERREUR; //pointeur signifiant que la fonction a eu une erreur
 ligne DEBUT_FICHIER; //pointeur représentant le début du fichier
 ligne FIN_FICHIER; //pointeur représentant la fin du fichier
 
-//Gestion des erreurs et débogage:
-bool err_log = FALSE; //indique si les erreurs doivent être logguées dans un fichier
-char nom_ferreur[] = "erreurs.txt"; //nom du fichier de log d'erreurs (si activé)
+//Débogage:
 bool debogage = FALSE; //indique si le mode débogage est activé
 char element_debogue = 'i'; //indique ce qui est débogué (lorsque le mode débogage est activé)
 							//Valeurs possibles: i = input, p = position, n = input (raw)
-
+							
 //Gestion du fichier ouvert:
 char nom_fichier[100]; //nom du fichier actuellement modifié (buffer très long pour (entre autres) accomodé tout le chemin d'accès au fichier, si nécessaire...)
 FILE* fichier = NULL; //pointeur vers le fichier actuellement modifié
@@ -185,8 +207,6 @@ ligne* ln_mod; //ligne modifiée présentement (ligne où se trouve le curseur)
 //Autres:
 bool coloration_syntaxique = 1; //indique si la coloration syntaxique est activée
 bool barre_dispo = 1; //indique si un message est présentement affiché dans la barre d'état (0 = occupée, 1 = libre)
-char cmd_compiler_liste[100] = "./createur_liste "; //commande permettant de compiler la liste qu'est le document en cours de modification (le nom du fichier sera appendé à son ouverture)
-
 
 
 //Fonctions Macros:
@@ -206,9 +226,9 @@ char cmd_compiler_liste[100] = "./createur_liste "; //commande permettant de com
 #define DEBUG_RADICAL(txt, ...);	err_printf(1, txt, __VA_ARGS__); quitter(-1); erreur(0, "..."); exit(-100); //comme le macro de débogage standard, mais quitte à la fin pour être sûr que le message se rend et que ça ne plante pas
 
 
-
 //Fonctions:
 //Se référer au fichier .c où est implémentée la fonction pour plus de détails.
+
 //coloration.c:
 ligne* aller_a (int num); //envoie l'utilisateur à une certaine ligne du fichier (reçue en paramètre ou demandée par la fonction si num = 0)
 void cmd (char commande[]); //exécute une commande (en demande une si commande est NULL)
@@ -218,12 +238,14 @@ int main (int argc, char* argv[]); //contient l'ouverture et l'initialisation du
 void menu_options (); //affiche le menu des options (et gère son utilisation)
 void quitter (int code); //ferme proprement le programme
 void term (); //permet à l'utilisateur d'envoyer une commande au terminal (et de consulter son output)
+
 //outils_logiques.c:
 int compter_lignes(ligne* ln); //compte le nombre de lignes (à l'écran) qu'occupe une ligne du fichier
 ligne* init_ligne (int num); //initialise la structure d'une ligne en la lisant dans le fichier ouvert
 int longueur_str (char str[]); //trouve le nombre de caractères d'une string en tenant compte des accents
 ligne* trouve_ligne (int num); //renvoie un pointeur vers la ligne correspondant au numéro de ligne reçu
 ligne* trouve_tag (_tag tag, ligne* depart); //renvoie la première ligne ayant un certain tag d'assigné depuis la ligne de départ (ou le début du fichier si depart est NULL)
+
 //outils_graphiques.c:
 int afficher_ligne(ligne* ln); //affiche une ligne du fichier à l'écran
 void bordures (); //redessine les bordures (et quelques autres choses) de l'écran
