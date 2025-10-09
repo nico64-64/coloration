@@ -245,6 +245,10 @@ int afficher_ligne(ligne* ln)
 	{
 		switch (ln->tag)
 		{
+		case IGNORE:
+			//Juste pour faire taire gcc...
+			break;
+		
 		case DEBUT:
 		case FIN:
 			attrset(A_BOLD);

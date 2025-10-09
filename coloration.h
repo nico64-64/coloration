@@ -12,7 +12,7 @@
 
 
 //Version du programme:
-#define VERSION "0.3.0"
+#define VERSION "0.3.2"
 
 
 //Valeurs Macros:
@@ -130,7 +130,7 @@ struct p_avance
 commande cmds[] =
 {
 	{0, "", "", "", "", {0, 0, 0}}, //Cette fausse commande doit toujours rester vide! Elle ne sert qu'à décaler les autres commandes et offrir la possibilité d'utiliser le 0 comme valeur spéciale.
-	{1, "Généralités", "", "En apprendre plus sur cet éditeur.", "Coloration est un éditeur de texte TUI (Terminal User Interface) très semblable à Nano (GNU nano).\nLe but de cet éditeur est de faciliter la création et l'édition des fichiers de liste d'objets du projet \"text-adventure game\". Il s'agit d'un projet en cours, donc certaines fonctionnalités ne sont pas encore implantées.\nLa liste (incomplète) des commandes disponibles est toujours affichée dans le bas de l'écran. Voux pouvez aussi consulter ce manuel en appuyant sur Ctrl-A (^A). Vous y trouverez l'intégralité des commandes disponibles.\nCertaines commandes agissent de manière silencieuse, tandis que d'autres affichent un message dans la barre d'état (3e ligne depuis le bas de l'écran) ou encore demande un input de votre part. Dans ce dernier cas, les 2 lignes du bas de l'écran seront utilisées pour cela.\n \nNote sur la notation des touches:\nLe symbole \"^\" est utilisé pour représenter la touche Ctrl (exemple: ^A = Ctrl-A), tandis que les touches Alt, Cmd ou Alt-Car sont représentées par \"M-\" (exemple: M-# = Alt-Car #). \"Sh\" est parfois utilisé pour abrévier \"Shift\".", {3, 26, 0}},
+	{1, "Généralités", "", "En apprendre plus sur cet éditeur.", "Coloration est un éditeur de texte TUI (Terminal User Interface) très semblable à Nano (GNU nano).\nLe but de cet éditeur est de faciliter la création et l'édition des fichiers de liste d'objets du projet \"text-adventure game\". Il s'agit d'un projet en cours, donc certaines fonctionnalités ne sont pas encore implantées.\nLa liste (incomplète) des commandes disponibles est toujours affichée dans le bas de l'écran. Vous pouvez aussi consulter ce manuel en appuyant sur Ctrl-A (^A). Vous y trouverez l'intégralité des commandes disponibles.\nCertaines commandes agissent de manière silencieuse, tandis que d'autres affichent un message dans la barre d'état (3e ligne depuis le bas de l'écran) ou encore demandent un input de votre part. Dans ce dernier cas, les 2 lignes du bas de l'écran seront utilisées pour cela.\n \nNote sur la notation des touches:\nLe symbole \"^\" est utilisé pour représenter la touche Ctrl (exemple: ^A = Ctrl-A), tandis que les touches Alt, Cmd ou Alt-Car sont représentées par \"M-\" (exemple: M-# = Alt-Car #). \"Sh\" est parfois utilisé pour abrévier \"Shift\".", {3, 26, 0}},
 	{2, "Menu des options", "Esc", "Accéder au menu des options.", "Vous pouvez accéder à ce menu en appuyant sur \"Escape\" depuis l'interface principale de l'éditeur.\nCe menu fournis plusieurs raccourcis dont la plupart sont aussi accessibles autrement. Il s'agit toutefois de la seule manière d'accéder aux paramètres avancés et aux crédits.\nUtilisez les flèches pour vous déplacer dans le menu, puis appuyez sur \"Enter\" pour effectuer l'action sélectionnée. Appuyer sur \"Escape\" fermera le menu.", {26, 3, 0}},
 	{3, "Aide", "^A", "Accéder à cette page.", "Coloration est équipé d'un manuel d'aide intégré, que vous consultez en ce moment.\nOn peut y accéder à presque tous les moments en appuyant sur Ctrl-A.", {1, 26, 2}},
 	{4, "Quitter", "^Q", "Fermer le programme.", "Utilisez Ctrl-Q pour fermer Coloration sans enregistrer vos modifications au fichier ouvert.", {1, 0, 0}},
@@ -161,15 +161,16 @@ commande cmds[] =
 		"Redessine l'écran de Coloration sur le terminal, permettant parfois de régler quelques petits glitchs.\nAffiche aussi tout message d'erreur en attente dans la barre d'état.", {24, 0, 0}},
 	{24, "Débogage", "^D", "Activer ou désactiver le mode débogage.", "Appuyer sur Ctrl-D pour activer/désactiver le mode débogage.\nVous pouvez aussi changer de mode de débogage en appuyant sur M-# (Alt-Car 3). Il y a 3 modes de débogage: \"input\" (affiche le nom de la touche appuyée), \"position\" (affiche la position du curseur dans le fichier) et \"input (raw)\" (donne la valeur numérique de la touche appuyée).\nCette fonctionnalité est une des seules à ne pas avoir de commande correspondante. Ctrl-D est la seule manière de l'activer.", {23, 0, 0}},
 	{25, "Col. syntaxique", "F1", "Activer ou désactiver la coloration syntaxique.", "Active/Désactive la coloration syntaxique.\nCette coloration suit la syntaxe d'un fichier de liste d'objets source du projet \"text-adventure game\" (voir \"Compiler la liste\").\nAssurez-vous d'appuyer sur Fn en même temps que F1 pour que cela fonctionne.\nLa coloration syntaxique suivant la syntaxe attendue, elle n'apparaitra pas si le fichier n'est pas syntaxiquement conforme (voir \"Aller au -DÉBUT-\" et \"Aller à la -FIN-\").", {13, 21, 22}},
-	{26, "Paramètres avancés", "", "Modifier certains paramètres avancés.", "Accessible par le menu des options uniquement, les paramètres avancés comprennent quelques options de débogage ainsi que quelque variables internes modifiables par l'utilisateur.\nLa modification de ces paramètres n'est pas recommandée.", {2, 1, 0}},
+	{26, "Paramètres avancés", "", "Modifier certains paramètres avancés.", "Accessible par le menu des options uniquement, les paramètres avancés comprennent quelques options de débogage ainsi que quelque variables internes modifiables par l'utilisateur.\nLa modification de ces paramètres n'est pas recommandée.\n", {2, 1, 0}},
 };
 const int nbre_cmds = 26;
 
 //Paramètres avancés:
 bool err_log = FALSE; //indique si les erreurs doivent être logguées dans un fichier
 char nom_ferreur[50] = "erreurs.txt"; //nom du fichier de log d'erreurs (si activé)
-char cmd_compiler_liste[100] = "./createur_liste "; //commande permettant de compiler la liste qu'est le document en cours de modification (le nom du fichier sera appendé à son ouverture)
+char cmd_compiler_liste[100] = "./createur_liste"; //commande permettant de compiler la liste qu'est le document en cours de modification (le nom du fichier sera appendé à son ouverture)
 char nom_fconfig[50] = "config.txt"; //nom du fichier de configuration de l'éditeur
+bool compter_espaces = 1; //compter les espaces et autres caractères spéciaux lorsqu'on compte les caractères (À FAIRE!) (et les accents?)
 //Liste des paramètres avancés:
 p_avance p_avances[] =
 {
@@ -177,9 +178,10 @@ p_avance p_avances[] =
 	{"Logguer les erreurs dans un fichier txt.", 'b', (int*) &err_log, NULL},
 	{"Nom et emplacement du fichier de log des erreurs (si activé).", 's', NULL, &nom_ferreur[0]},
 	{"Commande envoyée pour \"compiler la liste\" (voir manuel d'aide).", 's', NULL, &cmd_compiler_liste[0]},
-	{"Nom et emplacement du fichier de configuration de l'éditeur. (À FAIRE)", 's', NULL, &nom_fconfig[0]},
+	{"Nom et emplacement du fichier de configuration de l'éditeur. (À FAIRE!)", 's', NULL, &nom_fconfig[0]},
+	{"Par défaut, les espaces et les caractères spéciaux doivent être comptés. (À FAIRE!)", 'b', (int*) &compter_espaces, NULL},
 };
-const int nbre_p_avances = 4;
+const int nbre_p_avances = 5;
 
 //Symboles internes:
 void* ERREUR; //pointeur signifiant que la fonction a eu une erreur
@@ -192,7 +194,7 @@ char element_debogue = 'i'; //indique ce qui est débogué (lorsque le mode déb
 							//Valeurs possibles: i = input, p = position, n = input (raw)
 							
 //Gestion du fichier ouvert:
-char nom_fichier[100]; //nom du fichier actuellement modifié (buffer très long pour (entre autres) accomodé tout le chemin d'accès au fichier, si nécessaire...)
+char nom_fichier[100] = ""; //nom du fichier actuellement modifié (buffer très long pour (entre autres) accomodé tout le chemin d'accès au fichier, si nécessaire...)
 FILE* fichier = NULL; //pointeur vers le fichier actuellement modifié
 ligne* lignes; //liste des lignes contenus dans le fichier
 
@@ -207,6 +209,7 @@ ligne* ln_mod; //ligne modifiée présentement (ligne où se trouve le curseur)
 //Autres:
 bool coloration_syntaxique = 1; //indique si la coloration syntaxique est activée
 bool barre_dispo = 1; //indique si un message est présentement affiché dans la barre d'état (0 = occupée, 1 = libre)
+char compilateur_liste[205];
 
 
 //Fonctions Macros:

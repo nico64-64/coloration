@@ -17,7 +17,7 @@ void credits()
 	standend();
 	
 	mvprintw(2, 4, "COLORATION %s\n\n    ", VERSION);
-	printw("Éditeur de texte inspiré de GNU nano.\n\n    Ce projet a pour but de faciliter l'édition des fichiers sources de scénarios (listes d'objets) du projet \"text-adventure game\".\n\n    ");
+	printw("Éditeur de texte inspiré de GNU nano.\n\n    Ce projet a pour but de faciliter la visualisation et l'édition des\n    fichiers de scénario (listes d'objets) de mon projet de jeu d'aventure.\n\n    ");
 	printw("Programmé par Nicolas Audette.\n\n    Appuyez sur Escape ou Enter pour quitter.");
 	
 	while (strcmp(keyname(input), "^[") != 0 && strcmp(keyname(input), "^M") != 0 && strcmp(keyname(input), "^Q") != 0)
@@ -31,35 +31,36 @@ void param_avances()
 {
 	int input = 0;
 	int selection = 1;
+	int nbre_accents = 0;
 	char buffer[250];
 	
 	//Affichage des bordures:
 	erase(); //efface tout l'écran au complet (lag moins que clear)
 	attrset(COLOR_PAIR(10)); //noir sur blanc
-	mvhline(0, 0, ' ', COLS); //dessine une ligne horizontale
+	mvhline(0, 0, ' ', COLS); //dessine une ligne horizontale en haut de l'écran
 	if (COLS / 2 > longueur_str("Paramètres avancés") / 2 + longueur_str("Coloration X.X.X ") + 2)
 	{mvprintw(0, COLS - longueur_str("Coloration X.X.X "), "Coloration %s", VERSION);} //Nom de l'éditeur en haut à droite
 	else if (COLS / 2 > longueur_str("Paramètres avancés") / 2 + longueur_str("Col ") + 2)
 	{mvprintw(0, COLS - longueur_str("Col "), "Col ");} //Nom abrégé en haut à droite (manque de place)
-	mvaddstrc(0, "Paramètres avancés"); //affiche le nom du fichier modifié
+	mvaddstrc(0, "Paramètres avancés"); //affiche le titre de la fenêtre
 	
 	//Affichage des raccourcis:
-	mvprintw(LINES - 2, 1, "^Q");
+	mvprintw(LINES - 1, 1, "^Q");
 	if (COLS > 61)
-	{mvprintw(LINES - 2, 25, "Enter");}
+	{mvprintw(LINES - 1, 25, "Enter");}
 	if (COLS > 98)
 	{
-		mvaddch(LINES - 2, 64, ACS_UARROW);
+		mvaddch(LINES - 1, 64, ACS_UARROW);
 		printw(" ET ");
 		addch(ACS_DARROW);
 	}	
 	standend();
 	mvhline(LINES - 3, 0, ACS_HLINE, COLS);
-	mvprintw(LINES - 2, 4, "Revenir à l'éditeur");
+	mvprintw(LINES - 1, 4, "Revenir à l'éditeur");
 	if (COLS > 61)
-	{mvprintw(LINES - 2, 31, "Modifier la valeur du paramètre");}
+	{mvprintw(LINES - 1, 31, "Modifier la valeur du paramètre");}
 	if (COLS > 98)
-	{mvprintw(LINES - 2, 71, "Naviguer dans les paramètres");}
+	{mvprintw(LINES - 1, 71, "Naviguer dans les paramètres");}
 	
 	while (strcmp(keyname(input), "^[") != 0 && strcmp(keyname(input), "^Q") != 0)
 	{
@@ -70,23 +71,23 @@ void param_avances()
 			if (selection == compteur)
 			{
 				attrset(COLOR_PAIR(10));
-				mvhline(LINES - 1, 0, ' ', COLS);
+				mvhline(LINES - 2, 0, ' ', COLS);
 				switch (p_avances[compteur].type)
 				{
 				case 's':
-					mvprintw(LINES - 1, 1, "[string] Valeur du paramètre: \"%s\"", p_avances[compteur].ptr_str);
+					mvprintw(LINES - 2, 1, "[string] Valeur du paramètre: \"%s\"", p_avances[compteur].ptr_str);
 					break;
 				
 				case 'c':
-					mvprintw(LINES - 1, 1, "[caractère]");
+					mvprintw(LINES - 2, 1, "[caractère]");
 					break;
 				
 				case 'i':
-					mvprintw(LINES - 1, 1, "[nombre]");
+					mvprintw(LINES - 2, 1, "[nombre]");
 					break;
 				
 				case 'b':
-					mvprintw(LINES - 1, 1, "[boolean]");
+					mvprintw(LINES - 2, 1, "[boolean]");
 					break;
 				}
 				mvhline(compteur + 1, 1, ' ', COLS - 3);
@@ -102,10 +103,13 @@ void param_avances()
 			if (longueur_str(p_avances[compteur].descr) > COLS - 15)
 			{
 				strcpy(buffer, p_avances[compteur].descr);
-				buffer[COLS - 17] = '.';
-				buffer[COLS - 16] = '.';
-				buffer[COLS - 15] = '.';
-				buffer[COLS - 14] = '\000';
+				buffer[COLS - 17] = '\000';
+				nbre_accents = strlen(buffer) - longueur_str(buffer);
+				strcpy(buffer, p_avances[compteur].descr);
+				buffer[COLS - 17 + nbre_accents] = '.';
+				buffer[COLS - 16 + nbre_accents] = '.';
+				buffer[COLS - 15 + nbre_accents] = '.';
+				buffer[COLS - 14 + nbre_accents] = '\000';
 				mvaddstr(compteur + 1, 4, buffer);
 			}
 			else
@@ -196,6 +200,7 @@ void param_avances()
 				
 				case 'i': //int
 					print_msg("Appuyer sur + pour augmenter ou - pour diminuer la valeur, Enter pour terminer.");
+					#pragma GCC diagnostic ignored "-Wunused-value" //nécessaire pour ne pas avoir de warning sur le ptr_int++ et ptr_int--
 					do
 					{
 						input = getch();
@@ -204,6 +209,7 @@ void param_avances()
 						else if (input == '-' && *p_avances[selection].ptr_int > 0)
 						{*p_avances[selection].ptr_int--;}
 					} while (strcmp(keyname(input), "^M") != 0 && strcmp(keyname(input), "^[") != 0);
+					#pragma GCC diagnostic warning "-Wunused-value"
 					break;
 				
 				case 's': //str
@@ -215,14 +221,14 @@ void param_avances()
 						if (input == KEY_BACKSPACE && strlen(p_avances[selection].ptr_str) > 0)
 						{
 							p_avances[selection].ptr_str[strlen(p_avances[selection].ptr_str) - 1] = '\000';
-							mvhline(LINES - 1, 0, ' ', COLS);
-							mvprintw(LINES - 1, 1, "[string] Valeur du paramètre: \"%s\"", p_avances[selection].ptr_str);
+							mvhline(LINES - 2, 0, ' ', COLS);
+							mvprintw(LINES - 2, 1, "[string] Valeur du paramètre: \"%s\"", p_avances[selection].ptr_str);
 						}
 						else if (input >= ' ' && input <= 126)
 						{
 							p_avances[selection].ptr_str[strlen(p_avances[selection].ptr_str)] = input;
 							p_avances[selection].ptr_str[strlen(p_avances[selection].ptr_str) + 1] = '\000';
-							mvprintw(LINES - 1, 1, "[string] Valeur du paramètre: \"%s\"", p_avances[selection].ptr_str);
+							mvprintw(LINES - 2, 1, "[string] Valeur du paramètre: \"%s\"", p_avances[selection].ptr_str);
 						}
 					} while (strcmp(keyname(input), "^M") != 0 && strcmp(keyname(input), "^[") != 0);
 					standend();
@@ -247,7 +253,9 @@ void aide_specifique(int num_cmd)
 	char* buff2 = NULL;
 	int decalage = 0;
 	int _y;
-	int _x;
+	#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+	int _x; //Cette variable contiendra le x de la position actuelle. Cette valeur n'est pas utilisée, mais je m'en fout! (d'où le #pragma)
+	#pragma GCC diagnostic warning "-Wunused-but-set-variable"
 	
 	_y = getmaxy(stdscr);
 	if (_y < 14)
@@ -263,7 +271,7 @@ void aide_specifique(int num_cmd)
 	mvprintw(2, 2, "Nom:");
 	mvprintw(2, 30, "Touche:");
 	mvprintw(5, 2, "Description:");
-	mvprintw(8, 2, "Details:");
+	mvprintw(8, 2, "Détails:");
 	if (_y >= 16)
 	{mvprintw(LINES - 4, 2, "Commandes liées:");}
 	standend();
@@ -359,6 +367,7 @@ void aide_specifique(int num_cmd)
 void aide(int num_cmd)
 //Affiche le manuel de l'éditeur.
 //Peut afficher l'article portant sur la commande dont le numéro est passé en paramètre ou l'aide interactive générale si cmd vaut 0.
+//La fonction peut aussi s'appeler elle-même avec -1 en arguments pour afficher l'aide interactive générale sans le message de bienvenue.
 {
 	char titre[100] = "Aide";
 	char buffer[200] = "";
@@ -366,11 +375,12 @@ void aide(int num_cmd)
 	int selection = 1;
 	int decalage = 0;
 	int marge = 10;
+	int nbre_accents = 0;
 	
 	//Ajustement du titre et gestion de ce qui ne devrait jamais arriver:
 	if (num_cmd > 0)
 	{strcat(titre, ": "); strcat(titre, cmds[num_cmd].nom);}
-	else if (num_cmd < 0)
+	else if (num_cmd < -1)
 	{erreur(30, "Le manuel de l'éditeur a tenté d'ouvrir une page négative. Quoi?!"); return;}
 	
 	//Empêche le curseur de clignoter à l'écran:
@@ -384,7 +394,7 @@ void aide(int num_cmd)
 	{mvprintw(0, COLS - longueur_str("Coloration X.X.X "), "Coloration %s", VERSION);} //Nom de l'éditeur en haut à droite
 	else if (COLS / 2 > longueur_str(titre) / 2 + longueur_str("Col ") + 2)
 	{mvprintw(0, COLS - longueur_str("Col "), "Col ");} //Nom abrégé en haut à droite (manque de place)
-	mvaddstrc(0, titre); //affiche le nom du fichier modifié
+	mvaddstrc(0, titre); //affiche le titre de la page ("aide")
 	
 	//Vérification de la taille du terminal:
 	if (COLS < 44)
@@ -394,8 +404,8 @@ void aide(int num_cmd)
 		print_msg("Terminal trop petit pour afficher l'aide de l'éditeur.");
 		return;
 	}
-	else if (COLS < 54)
-	{marge = COLS - 44;}
+	else if (COLS < 56)
+	{marge = COLS - 46;}
 		
 	//Accès à un article du manuel, si demandé:
 	if (num_cmd > 0)
@@ -408,7 +418,7 @@ void aide(int num_cmd)
 	{
 		mvaddch(LINES - 2, 25, ACS_UARROW);
 		mvaddch(LINES - 1, 25, ACS_DARROW);
-		if (COLS >= 44)
+		if (COLS >= 74)
 		{mvprintw(LINES - 1, 42, "Enter");}
 	}
 	
@@ -421,13 +431,14 @@ void aide(int num_cmd)
 	{
 		mvprintw(LINES - 2, 27, "Naviguer dans");
 		mvprintw(LINES - 1, 27, "les articles");
-		if (COLS >= 44)
+		if (COLS >= 74)
 		{mvprintw(LINES - 1, 48, "Lire l'article sélectionné");}
 	}
 	
 	//Titres des colonnes et message de bienvenue:
 	mvprintw(1, marge, "Nom:         | Touche: |        Description:");
-	print_msg("Bienvenue dans le module d'aide de Coloration! Appuyer sur \"Enter\" pour en savoir plus.");
+	if (num_cmd >= 0)
+	{print_msg("Bienvenue dans le module d'aide de Coloration! Appuyer sur \"Enter\" pour en savoir plus.");}
 	
 	//Gestion de l'input:
 	while (1)
@@ -443,10 +454,13 @@ void aide(int num_cmd)
 			if (longueur_str(cmds[decalage + compteur].descr) > COLS - 36)
 			{
 				strcpy(buffer, cmds[decalage + compteur].descr);
-				buffer[COLS - 39] = '.';
-				buffer[COLS - 38] = '.';
-				buffer[COLS - 37] = '.';
-				buffer[COLS - 36] = '\000';
+				buffer[COLS - 39] = '\000';
+				nbre_accents = strlen(buffer) - longueur_str(buffer);
+				strcpy(buffer, cmds[decalage + compteur].descr);
+				buffer[COLS - 39 + nbre_accents] = '.';
+				buffer[COLS - 38 + nbre_accents] = '.';
+				buffer[COLS - 37 + nbre_accents] = '.';
+				buffer[COLS - 36 + nbre_accents] = '\000';
 				mvaddstr(compteur + 1, 34, buffer);
 			}
 			else
@@ -479,7 +493,7 @@ void aide(int num_cmd)
 			break;
 		
 		case KEY_RESIZE:
-			aide(0);
+			aide(-1);
 			return;
 		
 		default:
@@ -500,7 +514,7 @@ void aide(int num_cmd)
 				
 				case 'M': //Ctrl-M (Enter) = lire l'article sélectionné
 					aide(selection);
-					aide(0);
+					aide(-1);
 					return;
 				}
 			}

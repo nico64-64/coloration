@@ -32,7 +32,7 @@ int erreur(int code, char message[])
 	{
 		if ((ferr = fopen(nom_ferreur, "a+")) != NULL)
 		{
-			fprintf(ferr, "\nInitialisation du log d'erreur de Coloration.\n");
+			fprintf(ferr, "\nInitialisation...\n");
 			fclose(ferr);
 		}
 		else
@@ -94,6 +94,32 @@ int erreur(int code, char message[])
 		nbre_erreurs++;
 		return nbre_erreurs;
 	}
+}
+
+
+void gestion_arguments(char arg[])
+{
+	if (!strcmp(arg, "--aide") || !strcmp(arg, "-a") || !strcmp(arg, "-?") || !strcmp(arg, "-h"))
+	{
+		printf("Coloration %s\n\n", VERSION);
+		printf("Coloration est un éditeur de texte TUI en cours de développement.\n");
+		printf("Usage: ./coloration [options] fichier.txt [options]\n\n");
+		printf("Voici la liste des options d'invocation disponibles:\n");
+		printf("--aide (-a / -?)  =  Affiche ce texte, puis quitte.\n");
+		printf("--version (-v)  =  Affiche la version de Coloration, puis quitte.\n");
+		printf("--errlog  =  Force temporairement le logging des erreurs dans un fichier.\n             (option de débogage)\n\n");
+		printf("Dans Coloration, vous pouvez accéder au manuel d'aide en tout temps (Ctrl-A).\n\n");
+		exit(0);
+	}
+	
+	else if (!strcmp(arg, "--version") || !strcmp(arg, "-v"))
+	{printf("Coloration %s\n\n", VERSION); exit(0);}
+	
+	else if (!strcmp(arg, "--errlog"))
+	{err_log = TRUE; erreur(0, "init");}
+	
+	else
+	{printf("Erreur: \"%s\" n'est pas une option d'invocation valide.\nEntrez \"./coloration -?\" pour voir la liste des options.\n\n", arg); exit(0);}
 }
 
 
@@ -165,12 +191,12 @@ void enregistrer(char nom_sauvegarde[])
 	//Création du fichier de sauvegarde:
 	fsauv = fopen(nom, "w");
 	if (fsauv == NULL)
-	{print_msg("Impossible d'enregistrer le fichier."); erreur(100, "Impossible de créer le fichier de sauvegarde..."); return;}
+	{rafraichir(); print_msg("Impossible d'enregistrer le fichier."); erreur(100, "Impossible de créer le fichier de sauvegarde..."); return;}
 	
 	//Écriture du texte:
 	fputs(ln->txt, fsauv);
 	ln = ln->suivant;
-	while (ln != NULL & ln != &FIN_FICHIER)
+	while (ln != NULL && ln != &FIN_FICHIER)
 	{
 		fputc('\n', fsauv);
 		fputs(ln->txt, fsauv);
@@ -243,7 +269,8 @@ void term()
 		
 		//Ctrl-A: Aide
 		else if (!strcmp(keyname(input), "^A"))
-		{aide(11); term(); rafraichir(); return;}
+		{aide(
+		11); term(); rafraichir(); return;}
 		
 		//Ctrl-O: Options
 		else if (!strcmp(keyname(input), "^T"))
@@ -265,7 +292,7 @@ void term()
 		printf("\nAppuyer sur \"Enter\" pour revenir à l'éditeur."); //petit rappel affiché dans la console, une fois la commande exécutée
 		getchar(); //on attend un input de l'utilisateur pour lui laisser le temps de lire l'output de sa commande
 				   //J'ai choisi d'utiliser getchar() parce que getch() ne fonctionne pas vraiment bien dans ce contexte, et puisqu'on ne prend qu'un seul caractère (même si on entre ensuite une nouvelle commande,
-				   // les 2 getchar() seront entrecoupés par ncurses), les folies rageantes de getchar() ne devraient pas nous affecter...
+				   // les 2 getchar() seront entrecoupés par ncurses), donc les folies rageantes de getchar() ne devraient pas nous affecter...
 	}
 	rafraichir(); //rétablissement de l'interface ncurses et affichage du programme
 }
@@ -410,7 +437,7 @@ void cmd(char commande[])
 	
 	//Parsing de la commande:
 	sprintf(mot[0], "%s", strtok(_cmd, " "));
-	for (int compteur = 1; compteur < 4 && mot[compteur -1] != NULL; compteur++)
+	for (int compteur = 1; compteur < 4 /*&& mot[compteur -1] != NULL*/; compteur++)
 	{sprintf(mot[compteur], "%s", strtok(NULL, " "));}
 	
 	//########################################################
@@ -451,7 +478,7 @@ void cmd(char commande[])
 			{
 				rafraichir();
 				print_msg("Seul un numéro de ligne valide peut être accepté comme argument par cette commande.");
-				buffln == NULL;
+				buffln = NULL;
 			}
 			else
 			{buffln = aller_a(buffint);}
@@ -527,22 +554,27 @@ void cmd(char commande[])
 int main(int argc, char* argv[])
 {
 	int input = EOF; //caractère reçu en input (doit être déclaré int pour accepter les accents, Ctrl-car., etc.)
-	int buffint = 0;
 	char buffer[20] = "";
 	
 	
-	//Erreurs d'invocation:
-	if (argc < 2)
-	{printf("Veuillez spécifier un fichier contenant une liste d'objets à afficher.\nExemple: \"%s liste_objets.txt\"\n\n", argv[0]); exit(0);}
+	//Arguments:
+	for (int compteur = 1; compteur < argc; compteur++)
+	{
+		if (!strcmp(nom_fichier, "") && argv[compteur][0] != '-') //tout argument commençant par un '-' ou reçu après qu'un nom du fichier (supposé) ait été lu est traité comme une option
+		{strcpy(nom_fichier, argv[compteur]);}
+		else
+		{gestion_arguments(argv[compteur]);}
+	}
 	
-	strcpy(nom_fichier, argv[1]);
+	//Ouverture du fichier:
+	if (!strcmp(nom_fichier, ""))
+	{printf("Veuillez spécifier un fichier contenant une liste d'objets à éditer ou afficher\nou entrer \"%s -?\" pour en apprendre plus.\n\n", argv[0]); exit(0);}
 	fichier = fopen(nom_fichier, "r");
 	if (fichier == NULL)
 	{printf("Impossible d'ouvrir le fichier \"%s\".\nExiste-t-il? Assurez-vous d'entrer le chemin complet ou le chemin relatif à ce dossier.\n\n", nom_fichier); exit(1);}
 	
 	
-	//Initialisation:
-	strcat(cmd_compiler_liste, nom_fichier); //ajout du nom du fichier à la commande permettant de le compiler comme liste d'objets
+	//Initialisation de ncurses:
 	setlocale(LC_ALL, "en_CA.UTF-8"); //permet l'affichage des accents!
 	initscr(); //initialise ncurses et créé stdscr
 	nodelay(stdscr, TRUE); //enlève le delai au rafraichissement de l'écran
@@ -551,9 +583,7 @@ int main(int argc, char* argv[])
 	ESCDELAY = 0; //enlève le délai à la réception du escape
 	keypad(stdscr, TRUE); //permet de prendre les flèches et autres touches du clavier comme input
 	noecho(); //n'echo pas l'input automatiquement
-	if (debogage)
-	{erreur(0, "init");} //log un message signalant l'ouverture du programme (lorsque le débogage est activé)
-	if (can_change_color) //le terminal supporte différentes couleurs et on peut modifier ces couleurs
+	if (can_change_color()) //le terminal supporte différentes couleurs et on peut modifier ces couleurs
 	{
 		start_color(); //initialise la gestion des couleurs de ncurses
 		init_pair(1, COLOR_GREEN, COLOR_BLACK); //crée une paire (#1) vert sur noir
@@ -569,7 +599,12 @@ int main(int argc, char* argv[])
 	else
 	{printf("Ce terminal ne supporte pas l'affichage en couleur.\nVeuillez réessayer avec un autre terminal.\n\n"); quitter(1);}
 	
-	//Initialisation:
+	//Ajout du nom du fichier à la commande permettant de le compiler comme liste d'objets:
+	strcpy(compilateur_liste, cmd_compiler_liste);
+	strcat(compilateur_liste, " ");
+	strcat(compilateur_liste, nom_fichier);
+	
+	//Initialisation du progamme:
 	init(); //des lignes du fichier
 	rafraichir(); //de l'écran d'affichage
 	ln_mod = trouve_ligne(premiere_ligne);

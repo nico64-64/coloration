@@ -96,7 +96,8 @@ ligne* init_ligne(int num)
 //Initialise la structure d'une ligne (en la lisant dans le fichier) lorsque le numéro est positif.
 //Libère la structure d'une ligne si le numéro est négatif.
 //Renvoie la dernière ligne initialisée si le numéro est 0.
-//Sinon, renvoie le numéro de la ligne initialisée ou libérée.
+//Renvoie la nouvelle ligne initialisée si le numéro est positif.
+//Sinon (numéro négatif ou erreur), renvoie NULL.
 {
 	static int num_ligne_max = 0; //nbre de lignes lues du fichier jusqu'à date
 	static fpos_t pos_max;
@@ -106,7 +107,7 @@ ligne* init_ligne(int num)
 	static int fin_txt_ignore = -1; //même chose, mais pour le texte ignoré (entre *)
 	ligne* nouv_ligne; //nouvelle ligne (présentement utilisé)
 	char car_lu = EOF;
-	int compteur = 0;
+	unsigned compteur = 0;
 	bool override = 0;
 	
 	if (num == 0)
@@ -216,66 +217,66 @@ ligne* init_ligne(int num)
 		if (nouv_ligne->tag == _element || nouv_ligne->tag == _element_ovr)
 		{
 			if (tolower(nouv_ligne->txt[0 + override]) == 'n' && nouv_ligne->txt[1 + override] == 'o' && nouv_ligne->txt[2 + override] == 'm')
-			{nouv_ligne->type = _nom;}
+			{nouv_ligne->type = _nom;} //nom
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && nouv_ligne->txt[1 + override] == 'e' && nouv_ligne->txt[2 + override] == 's' && nouv_ligne->txt[3 + override] == 'c' && nouv_ligne->txt[4 + override] == 'r')
-			{nouv_ligne->type = _descr;}
+			{nouv_ligne->type = _descr;} //descr
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && (nouv_ligne->txt[1 + override] == 'e' || nouv_ligne->txt[1 + override] == -61) && (nouv_ligne->txt[2 + override] == 't' || nouv_ligne->txt[2 + override] == -87) \
 				&& (nouv_ligne->txt[3 + override] == 'a' || (nouv_ligne->txt[3 + override] == 't' && nouv_ligne->txt[4 + override] == 'a')))
-			{nouv_ligne->type = _detail;}
+			{nouv_ligne->type = _detail;} //détail / detail
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'r' && nouv_ligne->txt[1 + override] == 'u' && nouv_ligne->txt[2 + override] == 'm')
-			{nouv_ligne->type = _rum;}
+			{nouv_ligne->type = _rum;} //rum
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'i' && nouv_ligne->txt[1 + override] == 'm' && nouv_ligne->txt[2 + override] == 'g')
-			{nouv_ligne->type = _img;}
+			{nouv_ligne->type = _img;} //img
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'e' && nouv_ligne->txt[1 + override] == 'n' && nouv_ligne->txt[2 + override] == 'd')
-			{nouv_ligne->type = _endroit;}
+			{nouv_ligne->type = _endroit;} //end
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'p' && nouv_ligne->txt[1 + override] == 'o' && nouv_ligne->txt[2 + override] == 'i' && nouv_ligne->txt[3 + override] == 'd' && nouv_ligne->txt[4 + override] == 's')
-			{nouv_ligne->type = _poids;}
+			{nouv_ligne->type = _poids;} //poids
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'c' && nouv_ligne->txt[1 + override] == 'a' && nouv_ligne->txt[2 + override] == 'p')
-			{nouv_ligne->type = _cap;}
+			{nouv_ligne->type = _cap;} //cap
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'v' && nouv_ligne->txt[1 + override] == 'i' && nouv_ligne->txt[2 + override] == 'e')
-			{nouv_ligne->type = _vie;}
+			{nouv_ligne->type = _vie;} //vie
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'c' && nouv_ligne->txt[1 + override] == 'o' && nouv_ligne->txt[2 + override] == 'n' && nouv_ligne->txt[3 + override] == 'f')
-			{nouv_ligne->type = _conf;}
+			{nouv_ligne->type = _conf;} //conf
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && ((nouv_ligne->txt[1 + override] == 'e' && nouv_ligne->txt[2 + override] == 'g') || (nouv_ligne->txt[1 + override] == -61 && nouv_ligne->txt[2 + override] == -87 \
 				&& nouv_ligne->txt[3 + override] == 'g')))
-			{nouv_ligne->type = _deg;}
+			{nouv_ligne->type = _deg;} //dég / deg
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'l' && nouv_ligne->txt[1 + override] == 'u' && nouv_ligne->txt[2 + override] == 'm')
-			{nouv_ligne->type = _lum;}
+			{nouv_ligne->type = _lum;} //lum
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'f' && nouv_ligne->txt[1 + override] == 'a' && nouv_ligne->txt[2 + override] == 'i' && nouv_ligne->txt[3 + override] == 'm')
-			{nouv_ligne->type = _faim;}
+			{nouv_ligne->type = _faim;} //faim
 			else if ((tolower(nouv_ligne->txt[0 + override]) == 'e' && nouv_ligne->txt[1 + override] == 't' && nouv_ligne->txt[2 + override] == 'a' && nouv_ligne->txt[3 + override] == 't') \
 				|| (nouv_ligne->txt[0 + override] == -61 && (nouv_ligne->txt[1 + override] == -87 || nouv_ligne->txt[1 + override] == -119) && nouv_ligne->txt[2 + override] == 't' && nouv_ligne->txt[3 + override] == 'a' \
 				&& nouv_ligne->txt[4 + override] == 't'))
-			{nouv_ligne->type = _etat;}
+			{nouv_ligne->type = _etat;} //état / etat
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'c' && nouv_ligne->txt[1 + override] == 'o' && nouv_ligne->txt[2 + override] == 'n' && nouv_ligne->txt[3 + override] == 'd')
-			{nouv_ligne->type = _cond;}
+			{nouv_ligne->type = _cond;} //cond
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && nouv_ligne->txt[1 + override] == 'e' && nouv_ligne->txt[2 + override] == 's' && nouv_ligne->txt[3 + override] == 't')
-			{nouv_ligne->type = _dest;}
+			{nouv_ligne->type = _dest;} //dest
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'i' && nouv_ligne->txt[1 + override] == 'm' && nouv_ligne->txt[2 + override] == 'p')
-			{nouv_ligne->type = _imp;}
+			{nouv_ligne->type = _imp;} //imp
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && nouv_ligne->txt[1 + override] == 'i' && nouv_ligne->txt[2 + override] == 's' && nouv_ligne->txt[3 + override] == 't')
-			{nouv_ligne->type = _dist;}
+			{nouv_ligne->type = _dist;} //dist
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'a' && nouv_ligne->txt[1 + override] == 'm' && nouv_ligne->txt[2 + override] == 'b')
-			{nouv_ligne->type = _amb;}
+			{nouv_ligne->type = _amb;} //amb
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'p' && nouv_ligne->txt[1 + override] == 't' && nouv_ligne->txt[2 + override] == 'v')
-			{nouv_ligne->type = _ptv;}
+			{nouv_ligne->type = _ptv;} //ptv
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'o' && nouv_ligne->txt[1 + override] == 'u' && nouv_ligne->txt[2 + override] == 'v')
-			{nouv_ligne->type = _ouv;}
+			{nouv_ligne->type = _ouv;} //ouv
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'f' && nouv_ligne->txt[1 + override] == 'e' && nouv_ligne->txt[2 + override] == 'r')
-			{nouv_ligne->type = _fer;}
+			{nouv_ligne->type = _fer;} //fer
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && ((nouv_ligne->txt[1 + override] == 'e' && nouv_ligne->txt[2 + override] == 'b') || (nouv_ligne->txt[1 + override] == -61 && nouv_ligne->txt[2 + override] == -87 \
 				&& nouv_ligne->txt[3 + override] == 'b')))
-			{nouv_ligne->type = _deb;}
+			{nouv_ligne->type = _deb;} //déb / deb
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'b' && nouv_ligne->txt[1 + override] == 'a' && nouv_ligne->txt[2 + override] == 'r')
-			{nouv_ligne->type = _bar;}
+			{nouv_ligne->type = _bar;} //bar
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'i' && nouv_ligne->txt[1 + override] == 'n' && nouv_ligne->txt[2 + override] == 't')
-			{nouv_ligne->type = _int;}
+			{nouv_ligne->type = _int;} //int
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'a' && nouv_ligne->txt[1 + override] == '-' && tolower(nouv_ligne->txt[2 + override]) == 'd')
-			{nouv_ligne->type = _a_d;}
+			{nouv_ligne->type = _a_d;} //a-d
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && nouv_ligne->txt[1 + override] == '-' && tolower(nouv_ligne->txt[2 + override]) == 'i')
-			{nouv_ligne->type = _d_i;}
+			{nouv_ligne->type = _d_i;} //d-i
 			else if (tolower(nouv_ligne->txt[0 + override]) == 'a' && nouv_ligne->txt[1 + override] == '-' && tolower(nouv_ligne->txt[2 + override]) == 'a')
-			{nouv_ligne->type = _a_a;}
+			{nouv_ligne->type = _a_a;} //a-a
 			else
 			{nouv_ligne->type = _inconnu;}
 		}
@@ -303,4 +304,7 @@ ligne* init_ligne(int num)
 		free(nouv_ligne);
 		return NULL;
 	}
+	
+	//Ce code ne sera jamais exécuté, mais gcc me met un warning, donc...
+	return NULL;
 }
