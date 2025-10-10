@@ -4,13 +4,13 @@
 void quitter(int code)
 //Permet de fermer le programme en s'assurant de fermer le fichier modifié et en quittant ncurses.
 //Cette fonction doit obligatoirement être appelée pour fermer le programme.
-//Le paramètre "code" sert uniquement à ne pas fermer le programme après avoir tout fermer s'il vaut -1.
+//Le paramètre "code" sert uniquement à ne pas fermer le programme après avoir tout fermé s'il vaut -1.
 {
 	fclose(fichier);
 	endwin();
 	while (erreur(0, "...") > 0) {} //affiche toutes les erreurs qui n'ont pas pu s'afficher encore
 	if (code != -1)
-	{exit(0);}
+	{exit(code);}
 }
 
 
@@ -98,7 +98,10 @@ int erreur(int code, char message[])
 
 
 void gestion_arguments(char arg[])
+//Gère les options d'invocation du programme.
 {
+	char* buffer = strtok(arg, "=");
+	
 	if (!strcmp(arg, "--aide") || !strcmp(arg, "-a") || !strcmp(arg, "-?") || !strcmp(arg, "-h"))
 	{
 		printf("Coloration %s\n\n", VERSION);
@@ -107,7 +110,7 @@ void gestion_arguments(char arg[])
 		printf("Voici la liste des options d'invocation disponibles:\n");
 		printf("--aide (-a / -?)  =  Affiche ce texte, puis quitte.\n");
 		printf("--version (-v)  =  Affiche la version de Coloration, puis quitte.\n");
-		printf("--errlog  =  Force temporairement le logging des erreurs dans un fichier.\n             (option de débogage)\n\n");
+		printf("--fconfig=fichier.txt  =  Force le programme à utiliser le fichier de configuration fourni.\n\n");
 		printf("Dans Coloration, vous pouvez accéder au manuel d'aide en tout temps (Ctrl-A).\n\n");
 		exit(0);
 	}
@@ -115,8 +118,14 @@ void gestion_arguments(char arg[])
 	else if (!strcmp(arg, "--version") || !strcmp(arg, "-v"))
 	{printf("Coloration %s\n\n", VERSION); exit(0);}
 	
-	else if (!strcmp(arg, "--errlog"))
-	{err_log = TRUE; erreur(0, "init");}
+	else if (!strcmp(buffer, "--fconfig"))
+	{
+		buffer = strtok(NULL, "=");
+		if (buffer == NULL)
+		{printf("Veuillez spécifier un fichier de configuration à utiliser.\nExemple: ./coloration --fconfig=config.txt\n\n"); exit(0);}
+		strcpy(nom_fconfig, buffer);
+		fconfig_particulier = TRUE; //crééra une erreur si fconfig n'existe pas (au lieu d'utiliser les réglages par défaut)
+	}
 	
 	else
 	{printf("Erreur: \"%s\" n'est pas une option d'invocation valide.\nEntrez \"./coloration -?\" pour voir la liste des options.\n\n", arg); exit(0);}
@@ -269,8 +278,7 @@ void term()
 		
 		//Ctrl-A: Aide
 		else if (!strcmp(keyname(input), "^A"))
-		{aide(
-		11); term(); rafraichir(); return;}
+		{aide(11); term(); rafraichir(); return;}
 		
 		//Ctrl-O: Options
 		else if (!strcmp(keyname(input), "^T"))
@@ -370,6 +378,94 @@ ligne* aller_a(int num)
 }
 
 
+void ouvrir(char nom_nouveau_fichier[])
+//Essaie d'ouvrir le fichier dont le nom est fourni en paramètre et redémarre le programme avec ce fichier en argument si le fichier est ouvrable.
+//Affiche un message si le fichier n'est pas ouvrable.
+//Affiche un "dialogue" permettant d'entrer le nom du fichier à ouvrir si NULL est fourni en paramètre.
+{
+	int input = EOF;
+	int pos = 0;
+	char nom[100] = "";
+	char buffer[100];
+	FILE* nouveau_fichier = NULL;
+	
+	//Demande le nom du fichier à ouvrir, si nécessaire:
+	if (nom_nouveau_fichier == NULL)
+	{
+		//Effaçage du bas de l'écran:
+		print_msg(NULL);
+		mvhline(LINES - 1, 0, ' ', COLS);
+		
+		//Liste des options:
+		mvprintw(LINES - 1, 4, "Annuler");
+		mvprintw(LINES - 1, 16, "Aide");
+		mvprintw(LINES - 1, 25, "Visualiser");
+		
+		if (COLS - longueur_str("Ouverture ") > 34)
+		{mvprintw(LINES - 1, COLS - longueur_str("Ouverture "), "Ouverture ");}
+		
+		//Effaçage de la ligne de commande
+		attrset(COLOR_PAIR(10));
+		mvhline(LINES - 2, 0, ' ', COLS);
+		
+		//Écriture des raccourcis:
+		mvprintw(LINES - 1, 1, "^C");
+		mvprintw(LINES - 1, 13, "^A");
+		mvprintw(LINES - 1, 22, "^V");
+		
+		//Mise en forme de la ligne de commande:
+		mvprintw(LINES - 2, 1, "Nom du fichier: ");
+		
+		//Prise de la commande:
+		while (strcmp(keyname(input), "^M") != 0) //Ctrl-M = Enter
+		{
+			do
+			{input = getch();} while (input == -1);
+			
+			//Caractères imprimables (sauf les accents, mais bon...)
+			if (input >= ' ' && input <= 126 && pos < 74)
+			{nom[pos] = input; pos++; addch(input);}
+			
+			//KEY_BACKSPACE: Effacer
+			else if (input == KEY_BACKSPACE && pos > 0)
+			{pos--; mvaddch(LINES - 2, 17 + pos, ' '); move(LINES - 2, 17 + pos);}
+			
+			//Ctrl-C: Annuler
+			else if (!strcmp(keyname(input), "^C"))
+			{rafraichir(); return;}
+			
+			//Ctrl-A: Aide
+			else if (!strcmp(keyname(input), "^A"))
+			{aide(7); ouvrir(nom_nouveau_fichier); rafraichir(); return;}
+		}
+		nom[pos] = '\000';
+	}
+	else
+	{strcpy(nom, nom_nouveau_fichier);}
+	
+	//Ouverture du fichier (pour être sûr qu'il existe vraiment):
+	rafraichir();
+	if (nom[0] == '\000')
+	{print_msg("Veuillez spécifier un fichier à ouvrir."); return;}
+	else
+	{
+		nouveau_fichier = fopen(nom, "r");
+		if (nouveau_fichier == NULL)
+		{print_msg("Le fichier spécifié est introuvable ou ne peut pas être ouvert."); return;}
+		fclose(nouveau_fichier);
+	}
+	
+	//Redémarrage du programme avec le nouveau fichier en argument:
+	desinit();
+	quitter(-1);
+	if (fconfig_particulier)
+	{sprintf(buffer, "--fconfig=%s", nom_fconfig); execl("./coloration", "coloration", nom, buffer, NULL);}
+	else
+	{execl("./coloration", "coloration", nom, NULL);}
+	exit(0);
+}
+
+
 void cmd(char commande[])
 //Exécute une commande reçue en paramètre.
 //Si ce paramètre est NULL, une commande sera d'abord demandée à l'utilisateur.
@@ -437,7 +533,7 @@ void cmd(char commande[])
 	
 	//Parsing de la commande:
 	sprintf(mot[0], "%s", strtok(_cmd, " "));
-	for (int compteur = 1; compteur < 4 /*&& mot[compteur -1] != NULL*/; compteur++)
+	for (int compteur = 1; compteur < 4; compteur++)
 	{sprintf(mot[compteur], "%s", strtok(NULL, " "));}
 	
 	//########################################################
@@ -445,11 +541,11 @@ void cmd(char commande[])
 	//Application de la commande:
 	//Aide:
 	if (!strcmp(mot[0], "aide"))
-	{aide(0); return;}
+	{aide(0);}
 	
 	//Rafraichir:
 	else if (!strcmp(mot[0], "rafraichir"))
-	{rafraichir(); erreur(0, "..."); return;}
+	{rafraichir(); erreur(0, "...");}
 	
 	//Quitter:
 	else if (!strcmp(mot[0], "quitter"))
@@ -524,6 +620,17 @@ void cmd(char commande[])
 	else if (!strcmp(mot[0], "terminal") || !strcmp(mot[0], "term"))
 	{term();}
 	
+	//Compiler la liste:
+	else if (!strcmp(mot[0], "compiler"))
+	{
+		endwin();
+		printf("\n");
+		system(compilateur_liste);
+		printf("Liste compilée.\nAppuyer sur \"Enter\" pour revenir à l'éditeur.\n");
+		while (getchar() != '\n') {} //J'haïs vraiment comment getchar (ne) fonctionne (pas)...
+		rafraichir();
+	}
+	
 	//Enregistrer ou Sauvegarder:
 	else if (!strcmp(mot[0], "enregistrer") || !strcmp(mot[0], "enr"))
 	{
@@ -536,6 +643,15 @@ void cmd(char commande[])
 	}
 	else if (!strcmp(mot[0], "sauvegarder") || !strcmp(mot[0], "sauv"))
 	{enregistrer(nom_fichier);}
+	
+	//Ouvrir un autre fichier:
+	else if (!strcmp(mot[0], "nouveau") || !strcmp(mot[0], "nouv") || !strcmp(mot[0], "ouvrir") || !strcmp(mot[0], "ouv"))
+	{
+		if (!strcmp(mot[1], "(null)"))
+		{ouvrir(NULL);}
+		else
+		{ouvrir(mot[1]);}
+	}
 	
 	//Ouvir le menu des options:
 	else if (!strcmp(mot[0], "menu") || !strcmp(mot[0], "options"))
@@ -552,6 +668,7 @@ void cmd(char commande[])
 
 
 int main(int argc, char* argv[])
+//Initialise le programme, puis gère la main loop de l'éditeur.
 {
 	int input = EOF; //caractère reçu en input (doit être déclaré int pour accepter les accents, Ctrl-car., etc.)
 	char buffer[20] = "";
@@ -565,6 +682,9 @@ int main(int argc, char* argv[])
 		else
 		{gestion_arguments(argv[compteur]);}
 	}
+	
+	//Lecture des réglages (paramètres avancés):
+	lire_parametres();
 	
 	//Ouverture du fichier:
 	if (!strcmp(nom_fichier, ""))
@@ -608,6 +728,7 @@ int main(int argc, char* argv[])
 	init(); //des lignes du fichier
 	rafraichir(); //de l'écran d'affichage
 	ln_mod = trouve_ligne(premiere_ligne);
+	while (erreur(0, "...") != 0) {} //affiche à l'écran toute erreur qui aurait pu avoir lieu durant l'initialisation
 	mv(1, 4);
 	
 	
@@ -834,17 +955,12 @@ int main(int argc, char* argv[])
 					cmd("sauvegarder");
 					break;
 				
-				case 'G': //Ctrl-G = Compiler la liste
-					endwin();
-					printf("\n");
-					system(cmd_compiler_liste);
-					printf("Liste compilée.\nAppuyer sur \"Enter\" pour revenir à l'éditeur.\n");
-					fgets(buffer, sizeof(buffer), stdin);
-					rafraichir();
+				case 'N': //Ctrl-N = Ouvrir un nouveau fichier
+					cmd("ouvrir");
 					break;
 				
-				case 'O': //Ctrl-O = Modifier les paramètres avancés (pas dans la barre de raccourcis)
-					//Paramètres avancés... (aussi accessibles par le menu) (exemple: modifier la commande de compilation)
+				case 'G': //Ctrl-G = Compiler la liste
+					cmd("compiler");
 					break;
 				}
 			}

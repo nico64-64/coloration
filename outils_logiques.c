@@ -97,7 +97,8 @@ ligne* init_ligne(int num)
 //Libère la structure d'une ligne si le numéro est négatif.
 //Renvoie la dernière ligne initialisée si le numéro est 0.
 //Renvoie la nouvelle ligne initialisée si le numéro est positif.
-//Sinon (numéro négatif ou erreur), renvoie NULL.
+//Renvoie NULL si le numéro est négatif.
+//Renvoie ERREUR en cas d'erreur.
 {
 	static int num_ligne_max = 0; //nbre de lignes lues du fichier jusqu'à date
 	static fpos_t pos_max;
@@ -306,5 +307,5 @@ ligne* init_ligne(int num)
 	}
 	
 	//Ce code ne sera jamais exécuté, mais gcc me met un warning, donc...
-	return NULL;
+	return ERREUR;
 }

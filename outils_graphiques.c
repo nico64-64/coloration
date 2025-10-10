@@ -225,10 +225,10 @@ int afficher_ligne(ligne* ln)
 //Renvoie le numéro de la ligne ou 0 si la ligne ne peut pas être affichée.
 //Renvoie -1 si la ligne ne s'est pas affichée au complet.
 {
-	int max = NBRE_CAR_MAX_PAR_LIGNE + strlen(ln->txt) - longueur_str(ln->txt);
-	
 	if (ln == NULL || ln == ERREUR || ln == &FIN_FICHIER || ln == &DEBUT_FICHIER || y >= LINES - 3)
 	{return 0;}
+	
+	int max = NBRE_CAR_MAX_PAR_LIGNE + strlen(ln->txt) - longueur_str(ln->txt);
 	
 	//Affichage du numéro de ligne:
 	mv(y, 0);

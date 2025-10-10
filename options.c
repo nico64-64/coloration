@@ -119,7 +119,7 @@ void param_avances()
 			switch (p_avances[compteur].type)
 			{
 			case '0': //ne devrait jamais arriver!
-				erreur(90, "Corruption de la liste des paramètres avancés.");
+				erreur(90, "Corruption de la liste des paramètres avancés!");
 				rafraichir();
 				return;
 			
@@ -187,10 +187,6 @@ void param_avances()
 					{*(bool*) p_avances[selection].ptr_int = FALSE;}
 					else
 					{*(bool*) p_avances[selection].ptr_int = TRUE;}
-					
-					//Spécial:
-					if ((bool*) p_avances[selection].ptr_int == &err_log)
-					{erreur(0, "init");}
 					break;
 				
 				case 'c': //char
@@ -241,6 +237,126 @@ void param_avances()
 	}
 	
 	rafraichir();
+	if (!enregistrer_parametres())
+	{erreur(0, "...");}
+}
+
+
+bool enregistrer_parametres()
+//Enregistre les paramètres avancés actuels dans le fichier de configuration fconfig.
+//Renvoie 1 en cas de succès et 0 en cas d'erreur.
+{
+	FILE* fconfig = fopen(nom_fconfig, "w+");
+	
+	if (fconfig == NULL)
+	{erreur(20, "Impossible de créer un fichier de configuration avec ce nom"); return 0;}
+	
+	fprintf(fconfig, "Fichier de configuration de l'éditeur de texte Coloration.\n");
+	fprintf(fconfig, "Ce fichier a été généré automatiquement et sera écrasé à chaque modification des paramètres avancés de l'éditeur.\nModifiez-le à vos propres risques.\n\n");
+	fprintf(fconfig, "Chaque paramètre doit être inscrit ainsi: \"[ PARAM:valeur ]\" (sans les guillemets).\nIl est important de respecter l'espacement avec les parenthèses carrées.\n");
+	fprintf(fconfig, "Tout texte écrit en dehors de ces parentèses carrées sera ignoré par le programme.\n\n\n");
+	
+	for (int compteur = 1; compteur <= nbre_p_avances; compteur++)
+	{
+		if (strcmp(p_avances[compteur].nom, "-") != 0) //Les paramètres nommés "-" ne doivent pas être enregistrés.
+		{
+			switch (p_avances[compteur].type)
+			{
+			case 'b': //bool
+				fprintf(fconfig, "[ %s:%d ]\n", p_avances[compteur].nom, *(bool*) p_avances[compteur].ptr_int);
+				break;
+			
+			case 'i': //int
+				fprintf(fconfig, "[ %s:%d ]\n", p_avances[compteur].nom, *p_avances[compteur].ptr_int);
+				break;
+			
+			case 'c': //char
+				fprintf(fconfig, "[ %s:%c ]\n", p_avances[compteur].nom, *p_avances[compteur].ptr_int);
+				break;
+			
+			case 's': //string
+				fprintf(fconfig, "[ %s:%s ]\n", p_avances[compteur].nom, p_avances[compteur].ptr_str);
+				break;
+			}
+		}
+	}
+	
+	fclose(fconfig);
+	return 1;
+}
+
+
+void lire_parametres()
+//Lit les paramètres avancés sauvegardés dans le fichier de configuration de l'éditeur (fconfig) et les applique.
+//Ne fait rien s'il n'y a pas de fichier de configuration (utilise donc les réglages par défaut).
+//Cette fonction doit être appelé immédiatement après gestion_arguments, avant l'initialisation du programme et de ncurses.
+{
+	char ligne[300];
+	char* mot = "";
+	int compteur = 0;
+	int buffint = -1;
+	FILE* fconfig = fopen(nom_fconfig, "r");
+	
+	if (fconfig == NULL) //s'il n'y a pas de fconfig, on va utiliser les réglages par défaut (sauf si l'utilisateur a précisé quel fichier utiliser via les options d'invocation)
+	{
+		if (fconfig_particulier)
+		{printf("Erreur: Impossible d'ouvrir ce fichier de configuration (%s).\nAvez-vous fait une faute de frappe?\n\n", nom_fconfig); exit(0);}
+		return;
+	}
+	
+	while (fgets(ligne, sizeof(ligne), fconfig) != NULL)
+	{
+		mot = strtok(ligne, ":;, \t\n");
+		while (mot != NULL && strcmp(mot, "[") != 0)
+		{mot = strtok(NULL, ":;, \t\n");}
+		if (mot != NULL)
+		{
+			mot = strtok(NULL, ":;, \t\n");
+			for (compteur = nbre_p_avances; compteur >= 0 && strcmp(mot, p_avances[compteur].nom); compteur--) {}
+			mot = strtok(NULL, ":;, \t\n");
+			if (!compteur || (p_avances[compteur].type != 's' && strcmp(strtok(NULL, ":;, \t\n"), "]") != 0))
+			{erreur(22, "Ligne invalide dans le fichier de configuration");}
+			else
+			{
+				switch (p_avances[compteur].type)
+				{
+				case 'b': //bool
+					sscanf(mot, "%d", &buffint);
+					if (buffint == 1 || buffint == 0)
+					{*(bool*) p_avances[compteur].ptr_int = (bool) buffint;}
+					else
+					{erreur(23, "Ligne invalide dans le fichier de configurration (faux paramètre booléen)");}
+					break;
+				
+				case 'i': //int
+					sscanf(mot, "%d", &buffint);
+					if (buffint == -1)
+					{erreur(24, "Ligne invalide dans le fichier de configurration (faux paramètre numérique)");}
+					else
+					{*p_avances[compteur].ptr_int = buffint;}
+					break;
+				
+				case 'c': //char
+					*p_avances[compteur].ptr_int = mot[0];
+					break;
+				
+				case 's': //string
+					strcpy(p_avances[compteur].ptr_str, mot);
+					mot = strtok(NULL, ":;, \t\n");
+					while (mot != NULL && strcmp(mot, "]") != 0)
+					{
+						strcat(p_avances[compteur].ptr_str, " ");
+						strcat(p_avances[compteur].ptr_str, mot);
+						mot = strtok(NULL, ":;, \t\n");
+					}
+					break;
+				}
+			}
+		}
+	}
+	
+	fclose(fconfig);
+	return;
 }
 
 
@@ -621,8 +737,9 @@ void menu_options()
 					return;
 				
 				case 4: //Ouvrir un autre fichier
-					//Ouvrir...
-					break;
+					curs_set(1);
+					cmd("ouvrir");
+					return;
 				
 				case 5: //Afficher les crédits
 					credits();

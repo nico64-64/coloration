@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include <signal.h>
@@ -12,7 +13,7 @@
 
 
 //Version du programme:
-#define VERSION "0.3.2"
+#define VERSION "0.3.3"
 
 
 //Valeurs Macros:
@@ -117,6 +118,7 @@ struct commande
 struct p_avance
 //Structure d'un paramètre avancé:
 {
+	char nom[30]; //sans espace et uniquement utilisé dans le fichier de configuration ("-" indique que ce paramètre ne doit pas être sauvegardé)
 	char descr[200];
 	char type; //0 = aucun, i = int, b = bool, c = char, s = string
 	int* ptr_int;
@@ -137,10 +139,10 @@ commande cmds[] =
 	{5, "Enregistrer", "^E", "Enregistrer le fichier.", "Utilisez cette commande pour enregistrer le fichier ouvert. Vous pourrez choisir le nom et l'emplacement du fichier.", {6, 0, 0}},
 	{6, "Sauvegarder", "^S", "Sauvegarder rapidement le fichier.", \
 		"Utilisez cette commande pour sauvegarder rapidement le fichier ouvert.\nVous ne pourrez pas modifier ni le nom, ni l'emplacement du fichier. Utilisez plutôt \"Enregistrer\" pour cela.", {5, 0, 0}},
-	{7, "Ouvrir un fichier", "^N", "Ouvrir un autre fichier ou en créer un.", "Fonctionnalité à venir.\nÀ Faire!", {1, 5, 6}},
+	{7, "Ouvrir un fichier", "^N", "Ouvrir un autre fichier ou en créer un.", "Utilisez cette commande pour ouvrir un autre fichier avec Coloration.\nVous devrez entrer le chemin d'accès au fichier depuis l'endroit d'où vous avex démarré Coloration.\nNotez bien que tout changement non sauvegrdé au fichier en cours de modification sera perdu, puisque l'éditeur sera redémarré.", {1, 5, 6}},
 	{8, "Aller à", "^L", "Envoyer le curseur à une certaine ligne.", "Utilisez cette commande pour emmener rapidement votre curseur au début d'une certaine ligne du fichier.", {21, 22, 9}},
 	{9, "Trouver & remplacer", "^F", "Trouver (et remplacer) une expression dans le fichier.", "Fonctionnalité à venir.\nÀ Faire!", {21, 22, 8}},
-	{10, "Ligne de commande", "^P", "Envoyer une commande à l'éditeur", "Ouvre une ligne de commande Coloration en bas de l'écran.\nVoici la liste des commandes acceptées par cette ligne de commande ainsi qu'une brève description de leur effet ou une référence à l'article approprié de ce manuel:\n- aide -> voir \"Aide\"\n- rafraichir -> voir \"Rafraichir\"\n- ligne / aller / aller à (Argument facultatif: numéro de ligne / \"DEBUT\" / \"FIN\") -> Emmène le curseur à la ligne fournie en argument ou effectue la commande \"Aller à\" si aucun argument n'est fourni. Effectue la commande \"Aller au -DÉBUT-\" ou \"Aller à la -FIN-\" si l'argument y correspond.\n- DEBUT -> voir \"Aller au -DÉBUT-\"\n- FIN -> voir \"Aller à la -FIN-\"\n- terminal / term -> voir \"Accès au terminal\"\n- enregistrer / enregistrer comme / enregistrer sous / enr (Argument facultatif: nom du fichier) -> Effectue la commande \"Enregistrer\" si aucun argument n'est fourni ou enregistre le fichier ouvert sous le nom fourni (au même endroit).\n- sauvegarder / sauv -> Voir \"Sauvegarder\".\n- menu / options -> Voir \"Menu des options\".\n", {11, 2, 0}},
+	{10, "Ligne de commande", "^P", "Envoyer une commande à l'éditeur", "Ouvre une ligne de commande Coloration en bas de l'écran.\nVoici la liste des commandes acceptées par cette ligne de commande ainsi qu'une brève description de leur effet ou une référence à l'article approprié de ce manuel:\n- aide -> voir \"Aide\"\n- rafraichir -> voir \"Rafraichir\"\n- ligne / aller / aller à (Argument facultatif: numéro de ligne / \"DEBUT\" / \"FIN\") -> Emmène le curseur à la ligne fournie en argument ou effectue la commande \"Aller à\" si aucun argument n'est fourni. Effectue la commande \"Aller au -DÉBUT-\" ou \"Aller à la -FIN-\" si l'argument y correspond.\n- DEBUT -> voir \"Aller au -DÉBUT-\"\n- FIN -> voir \"Aller à la -FIN-\"\n- compiler -> voir \"Compiler la liste\"\n- terminal / term -> voir \"Accès au terminal\"\n- enregistrer / enregistrer comme / enregistrer sous / enr (Argument facultatif: nom du fichier) -> Effectue la commande \"Enregistrer\" si aucun argument n'est fourni ou enregistre le fichier ouvert sous le nom fourni (au même endroit).\n- sauvegarder / sauv -> Voir \"Sauvegarder\".\n- ouvrir / nouveau / ouv / nouv -> voir \"Ouvrir un fichier\". Vous pouvez aussi spécifier le nom du fichier en argument.\n- menu / options -> Voir \"Menu des options\".\n", {11, 2, 0}},
 	{11, "Accès au terminal", "^T", "Entrer une commande système.", "Permet d'entrer une commande bash depuis Coloration.\nEntrez Ctrl-T une deuxième fois pour que l'éditeur s'efface, laissant place à une toute nouvelle console bash prenant le contrôle de l'entièreté du terminal. Dans ce cas, n'oubliez pas d'entrer la commande bash \"exit\" pour revenir à l'éditeur.", {10, 0, 0}},
 	{12, "Compter caractères", "^W", "Compter les caractères sélectionnés ou du fichier complet.", \
 		"Indique combien de caractères on été sélectionnés. Si aucun caractère n'est sélectionné, le nombre de caractère total du fichier ouvert s'affichera.", {0, 0, 0}},
@@ -161,32 +163,30 @@ commande cmds[] =
 		"Redessine l'écran de Coloration sur le terminal, permettant parfois de régler quelques petits glitchs.\nAffiche aussi tout message d'erreur en attente dans la barre d'état.", {24, 0, 0}},
 	{24, "Débogage", "^D", "Activer ou désactiver le mode débogage.", "Appuyer sur Ctrl-D pour activer/désactiver le mode débogage.\nVous pouvez aussi changer de mode de débogage en appuyant sur M-# (Alt-Car 3). Il y a 3 modes de débogage: \"input\" (affiche le nom de la touche appuyée), \"position\" (affiche la position du curseur dans le fichier) et \"input (raw)\" (donne la valeur numérique de la touche appuyée).\nCette fonctionnalité est une des seules à ne pas avoir de commande correspondante. Ctrl-D est la seule manière de l'activer.", {23, 0, 0}},
 	{25, "Col. syntaxique", "F1", "Activer ou désactiver la coloration syntaxique.", "Active/Désactive la coloration syntaxique.\nCette coloration suit la syntaxe d'un fichier de liste d'objets source du projet \"text-adventure game\" (voir \"Compiler la liste\").\nAssurez-vous d'appuyer sur Fn en même temps que F1 pour que cela fonctionne.\nLa coloration syntaxique suivant la syntaxe attendue, elle n'apparaitra pas si le fichier n'est pas syntaxiquement conforme (voir \"Aller au -DÉBUT-\" et \"Aller à la -FIN-\").", {13, 21, 22}},
-	{26, "Paramètres avancés", "", "Modifier certains paramètres avancés.", "Accessible par le menu des options uniquement, les paramètres avancés comprennent quelques options de débogage ainsi que quelque variables internes modifiables par l'utilisateur.\nLa modification de ces paramètres n'est pas recommandée.\n", {2, 1, 0}},
+	{26, "Paramètres avancés", "", "Modifier certains paramètres avancés.", "Accessible par le menu des options uniquement, les paramètres avancés comprennent quelques options de débogage ainsi que quelque variables internes modifiables par l'utilisateur.\nLa modification de ces paramètres n'est pas recommandée.", {2, 1, 0}},
 };
 const int nbre_cmds = 26;
 
 //Paramètres avancés:
-bool err_log = FALSE; //indique si les erreurs doivent être logguées dans un fichier
-char nom_ferreur[50] = "erreurs.txt"; //nom du fichier de log d'erreurs (si activé)
-char cmd_compiler_liste[100] = "./createur_liste"; //commande permettant de compiler la liste qu'est le document en cours de modification (le nom du fichier sera appendé à son ouverture)
-char nom_fconfig[50] = "config.txt"; //nom du fichier de configuration de l'éditeur
-bool compter_espaces = 1; //compter les espaces et autres caractères spéciaux lorsqu'on compte les caractères (À FAIRE!) (et les accents?)
+bool err_log = FALSE; //indique si les erreurs doivent être logguées dans un fichier (désactivé par défaut parce qu'à part remplir le fichier de lignes vides / "Initialisation...", ça ne fait rien d'utile)
+char nom_ferreur[50] = "erreurs.txt"; //nom du fichier de log d'erreurs (si activé) (au nombre d'erreurs que j'ai définies, ça ne sert pas vraiment à rien...)
+char cmd_compiler_liste[100] = "./createur_liste"; //commande permettant de compiler la liste qu'est le document en cours de modification (excluant le nom du fichier, qui est ajouté après cette string dans compilateur_liste)
+char nom_fconfig[50] = "config.txt"; //nom du fichier de configuration de l'éditeur (soit le fichier où les paramètres avancés sont sauvegardés)
 //Liste des paramètres avancés:
 p_avance p_avances[] =
 {
-	{"", '0', NULL, NULL}, //Ce faux paramètre avancé doit toujours rester vide. Il sert uniquement à décaler la liste pour qu'elle commence à 1.
-	{"Logguer les erreurs dans un fichier txt.", 'b', (int*) &err_log, NULL},
-	{"Nom et emplacement du fichier de log des erreurs (si activé).", 's', NULL, &nom_ferreur[0]},
-	{"Commande envoyée pour \"compiler la liste\" (voir manuel d'aide).", 's', NULL, &cmd_compiler_liste[0]},
-	{"Nom et emplacement du fichier de configuration de l'éditeur. (À FAIRE!)", 's', NULL, &nom_fconfig[0]},
-	{"Par défaut, les espaces et les caractères spéciaux doivent être comptés. (À FAIRE!)", 'b', (int*) &compter_espaces, NULL},
+	{"-", "", '0', NULL, NULL}, //Ce faux paramètre avancé doit toujours rester vide. Il sert uniquement à décaler la liste pour qu'elle commence à 1.
+	{"ERRLOG", "Logguer les erreurs dans un fichier txt.", 'b', (int*) &err_log, NULL},
+	{"FERREUR", "Nom et emplacement du fichier de log des erreurs (si activé).", 's', NULL, &nom_ferreur[0]},
+	{"CMD_COMPILER", "Commande envoyée pour \"compiler la liste\" (voir manuel d'aide).", 's', NULL, &cmd_compiler_liste[0]},
+	{"-", "Nom et emplacement du fichier de configuration de l'éditeur.", 's', NULL, &nom_fconfig[0]},
 };
-const int nbre_p_avances = 5;
+const int nbre_p_avances = 4;
 
 //Symboles internes:
-void* ERREUR; //pointeur signifiant que la fonction a eu une erreur
-ligne DEBUT_FICHIER; //pointeur représentant le début du fichier
-ligne FIN_FICHIER; //pointeur représentant la fin du fichier
+void* ERREUR; //pointeur signifiant que la fonction le retournant a eu une erreur
+ligne DEBUT_FICHIER; //variable dont l'adresse sert à représenter le début du fichier
+ligne FIN_FICHIER; //variable dont l'adresse sert à représenter la fin du fichier
 
 //Débogage:
 bool debogage = FALSE; //indique si le mode débogage est activé
@@ -194,29 +194,30 @@ char element_debogue = 'i'; //indique ce qui est débogué (lorsque le mode déb
 							//Valeurs possibles: i = input, p = position, n = input (raw)
 							
 //Gestion du fichier ouvert:
-char nom_fichier[100] = ""; //nom du fichier actuellement modifié (buffer très long pour (entre autres) accomodé tout le chemin d'accès au fichier, si nécessaire...)
+char nom_fichier[100] = ""; //nom du fichier actuellement modifié (buffer assez grand pour (entre autres) accomoder tout le chemin d'accès au fichier, si nécessaire...)
 FILE* fichier = NULL; //pointeur vers le fichier actuellement modifié
 ligne* lignes; //liste des lignes contenus dans le fichier
 
 //Position sur l'écran et dans le fichier:
-int y = 1; //position en y du curseur dans l'écran
-int x = 4; //position en x du curseur dans l'écran
+int y = 1; //position en y du curseur sur l'écran
+int x = 4; //position en x du curseur sur l'écran
 int premiere_ligne = 1; //numéro de la ligne la plus haute à l'écran
 int derniere_ligne = 10; //numéro de la ligne la plus basse à l'écran
 int pos_y = 1; //position en y dans la "ligne" modifiée par le curseur (soit le numéro de ligne dans cette ligne, pour lorsqu'elle est trop longue)
 ligne* ln_mod; //ligne modifiée présentement (ligne où se trouve le curseur)
 
 //Autres:
-bool coloration_syntaxique = 1; //indique si la coloration syntaxique est activée
-bool barre_dispo = 1; //indique si un message est présentement affiché dans la barre d'état (0 = occupée, 1 = libre)
-char compilateur_liste[205];
+bool coloration_syntaxique = TRUE; //indique si la coloration syntaxique est activée
+char compilateur_liste[205]; //commande réellement utilisée pour compiler la liste d'objets de ce fichier (= cmd_compiler_liste + ' ' + nom_fichier)
+bool fconfig_particulier = FALSE; //indique si l'utilisateur a spécifié un fconfig en option d'invocation
+bool barre_dispo = TRUE; //indique si un message est présentement affiché dans la barre d'état (0 = occupée, 1 = libre) (très peu utilisé...)
 
 
 //Fonctions Macros:
 
 //Affichage général:
 #define mv(position_y, position_x);		move(position_y, position_x); y = position_y; x = position_x; //permet de déplacer le curseur tout en mettant les variables x et y à jour (remplacement de "move")
-#define mvaddstrc(position_y, texte);	mvaddstr(position_y, (COLS - strlen(texte)) / 2, texte); //affiche une string centrée (sur une ligne y)
+#define mvaddstrc(position_y, texte);	mvaddstr(position_y, (COLS - longueur_str(texte)) / 2, texte); //affiche une string centrée (sur une ligne y)
 
 //Affichage personnalisé:
 #define init();		for (int _COMPTEUR = 1; init_ligne(_COMPTEUR) != NULL; _COMPTEUR++) {} //initialise toutes les lignes du fichier
@@ -237,10 +238,19 @@ ligne* aller_a (int num); //envoie l'utilisateur à une certaine ligne du fichie
 void cmd (char commande[]); //exécute une commande (en demande une si commande est NULL)
 void enregistrer (char nom_sauvegarde[]); //enregistre le buffer modifié dans un fichier dont le nom est reçu en paramètre (si NULL, un nom sera demandé)
 int erreur (int code, char message[]); //log une erreur ou en affiche une (s'il y en a une) si code = 0
+void gestion_arguments (char arg[]); //gère les options d'invocation du programme
 int main (int argc, char* argv[]); //contient l'ouverture et l'initialisation du programme ainsi que la main loop
-void menu_options (); //affiche le menu des options (et gère son utilisation)
+void ouvrir (char nom_nouveau_fichier[]); //ouvre un nouveau fichier (en redémarrant le programme)
 void quitter (int code); //ferme proprement le programme
 void term (); //permet à l'utilisateur d'envoyer une commande au terminal (et de consulter son output)
+
+//options.c:
+void aide (int num_cmd); //ouvre le module d'aide / manuel et gère (et affiche) l'aide interactive générale
+void aide_specifique (int num_cmd); //affiche l'article du manuel à propos de la commande dont elle vient de recevoir le numéro
+bool enregistrer_parametres (); //enregistre les paramètres avancés dans fconfig
+void credits (); //affiche et gère la fenêtre des crédits
+void menu_options (); //affiche le menu des options (et gère son utilisation)
+void param_avances (); //affiche et gère la fenêtre des paramètres avancés
 
 //outils_logiques.c:
 int compter_lignes(ligne* ln); //compte le nombre de lignes (à l'écran) qu'occupe une ligne du fichier
