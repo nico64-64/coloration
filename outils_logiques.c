@@ -32,6 +32,120 @@ int longueur_str(char str[])
 }
 
 
+char* insere_car(char str[], int car, unsigned pos, unsigned taille_max)
+//Insère le caractère car dans la string str (de taille maximale taille_max), à la position pos.
+//Renvoie la nouvelle string en cas de succès (la string est aussi modifiée directement par adresse).
+//Renvoie NULL (et ne fait rien) en cas d'erreur (surtout quand il n'y a pas de place dans str pour insérer car).
+{
+	char lettre_inseree[3];
+	unsigned compteur;
+	
+	if (str == NULL || pos >= taille_max || strlen(str) + 1 >= taille_max || !match_accent(car, lettre_inseree))
+	{return NULL;}
+	
+	char buffer = str[pos];
+	char buffer2;
+	int ncar = 1; //nbre de caractères de décalage (1 pour un caractère normal, 2 pour un accent)
+	
+	str[pos] = lettre_inseree[0];
+	if (lettre_inseree[0] != car)
+	{str[pos + 1] = lettre_inseree[1]; ncar = 2;}
+	for (compteur = pos + ncar; compteur <= strlen(str); compteur++)
+	{
+		buffer2 = str[compteur];
+		str[compteur] = buffer;
+		buffer = buffer2;
+	}
+	str[compteur + 1] = buffer;
+	str[compteur + 2] = '\000';
+	
+	return str;
+}
+
+
+#ifdef _ACCENTS_H
+bool est_un_accent(int car)
+//Indique si le caractère reçu en paramètre est un accent (défini dans liste_accents).
+//Cette fonction est seulement utile avec un input ncurses!
+//Elle ne détectera pas les accents dans un string.
+{
+	for (int compteur = 0; compteur < 20; compteur++)
+	{
+		if (liste_accents[compteur].valeur_min == car || liste_accents[compteur].valeur_maj == car)
+		{return TRUE;}
+	}
+	
+	return FALSE;
+}
+#endif
+
+
+bool match_accent(int car, char accent[])
+//Transforme un input accentué (format int) en un accent normal pouvant être placé dans une string (2 char).
+//Cet accent (ou la lettre non modifiée si elle n'en est pas un) est storé dans le paramètre accent (passé par référence).
+//Le paramètre accent devrait toujours pointer vers une string d'au moins 3 caractères de long.
+//Renvoie TRUE en cas de succès (ça ne veut pas dire que c'est un accent!) ou FALSE en cas d'erreur.
+{
+	if (accent == NULL)
+	{return FALSE;}
+	
+	if (!est_un_accent(car))
+	{
+		accent[0] = car;
+		accent[1] = '\000';
+		return TRUE;
+	}
+	
+	#ifdef _ACCENTS_H
+	int compteur;
+	for (compteur = 0; car != liste_accents[compteur].valeur_min && car != liste_accents[compteur].valeur_maj && compteur < 20; compteur++) {}
+	
+	if (car == liste_accents[compteur].valeur_min)
+	{strcpy(accent, liste_accents[compteur].minuscule);}
+	else if (car == liste_accents[compteur].valeur_maj)
+	{strcpy(accent, liste_accents[compteur].majuscule);}
+	else
+	{return FALSE;}
+	#else
+	accent[0] = '?';
+	accent[1] = '\000';
+	#endif
+	
+	return TRUE;
+}
+
+
+int relativise_pos(char str[], int pos)
+//Trouve la véritable position du curseur dans une string en compensant pour les accents.
+//Reçoit la string en question et la position supposée (position à l'écran) en paramètres.
+//Renvoie pos + le nombre d'accents avant pos.
+//Renvoie -1 si str est NULL, si pos < 0 ou si pos > longueur_str(str).
+//Renvoie 0 si str est vide ou si pos == 0.
+{
+	int nbre_accents = 0; //nombre d'accents trouvés jusqu'à présent
+	char multicar[3] = "  "; //string utilisée pour trouver les accents (multicharacter constants)
+	
+	if (str == NULL || pos < 0 || pos > longueur_str(str))
+	{return -1;}
+	
+	if (!strcmp(str, "") || pos == 0)
+	{return 0;}
+	
+	for (int compteur = 1; compteur <= pos + nbre_accents && str[compteur] != '\000'; compteur++)
+	{
+		multicar[0] = str[compteur - 1];
+		multicar[1] = str[compteur];
+		if (!strcmp(multicar, "é") || !strcmp(multicar, "è") || !strcmp(multicar, "ê") || !strcmp(multicar, "ë") || !strcmp(multicar, "à") || !strcmp(multicar, "â") || !strcmp(multicar, "ä") || !strcmp(multicar, "î") \
+			|| !strcmp(multicar, "ï") || !strcmp(multicar, "ô") || !strcmp(multicar, "ö") || !strcmp(multicar, "ù") || !strcmp(multicar, "û") || !strcmp(multicar, "ç") || !strcmp(multicar, "É") || !strcmp(multicar, "È") \
+			|| !strcmp(multicar, "Ê") || !strcmp(multicar, "Ë") || !strcmp(multicar, "À") || !strcmp(multicar, "Â") || !strcmp(multicar, "Ä") || !strcmp(multicar, "Î") || !strcmp(multicar, "Ï") || !strcmp(multicar, "Ô") \
+			|| !strcmp(multicar, "Ö") || !strcmp(multicar, "Ù") || !strcmp(multicar, "Û") || !strcmp(multicar, "Ç"))
+		{nbre_accents++;}
+	}
+	
+	return pos + nbre_accents;
+}
+
+
 ligne* trouve_ligne(int num)
 //Trouve une ligne à partir de son numéro (et renvoie un pointeur vers elle).
 //Renvoie ERREUR en cas d'erreur.
@@ -138,7 +252,7 @@ ligne* init_ligne(int num)
 		}
 		nouv_ligne->txt[compteur] = '\000';
 		while (car_lu != '\n' && car_lu != EOF && compteur - (strlen(nouv_ligne->txt) - longueur_str(nouv_ligne->txt)) < NBRE_CAR_MAX_PAR_LIGNE + 1)
-		{											//Note: La différence entre strlen() et longueur_str() correspond au nombre de caractères accentués dans la string (vu qu'ils prennent 2 "caractères" de "large" par vrai caractère...)
+		{										//Note: La différence entre strlen() et longueur_str() correspond au nombre de caractères accentués dans la string (vu qu'ils prennent 2 "caractères" de "large" par vrai caractère...)
 			nouv_ligne->txt[compteur] = car_lu;
 			car_lu = fgetc(fichier);
 			compteur++;
@@ -165,7 +279,7 @@ ligne* init_ligne(int num)
 		nouv_ligne->tag = 0; //ne devrait jamais être le cas, sauf pour les lignes vides
 		if (!strcmp(nouv_ligne->txt, "-DÉBUT-") && txt_a_ignorer)
 		{txt_a_ignorer = 0; nouv_ligne->tag = DEBUT;}
-		else if (txt_a_ignorer)
+		else if (txt_a_ignorer && strcmp(nouv_ligne->txt, "") != 0)
 		{nouv_ligne->tag = IGNORE;}
 		else
 		{
@@ -208,7 +322,7 @@ ligne* init_ligne(int num)
 				{
 					if (override)
 					{nouv_ligne->tag = _override;}
-					else
+					else if (strcmp(nouv_ligne->txt, "") != 0)
 					{nouv_ligne->tag = _pointeur;}
 				}
 			}

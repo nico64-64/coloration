@@ -5,6 +5,11 @@ void credits()
 //Affiche les crédits du programme.
 {
 	int input = -1;
+	#ifdef _ACCENTS_H
+	bool ln_supp = FALSE;
+	#else
+	bool ln_supp = TRUE;
+	#endif
 	
 	erase();
 	attrset(COLOR_PAIR(10)); //noir sur blanc
@@ -16,12 +21,36 @@ void credits()
 	mvaddstrc(0, "Crédits"); //affiche le titre
 	standend();
 	
-	mvprintw(2, 4, "COLORATION %s\n\n    ", VERSION);
-	printw("Éditeur de texte inspiré de GNU nano.\n\n    Ce projet a pour but de faciliter la visualisation et l'édition des\n    fichiers de scénario (listes d'objets) de mon projet de jeu d'aventure.\n\n    ");
-	printw("Programmé par Nicolas Audette.\n\n    Appuyez sur Escape ou Enter pour quitter.");
+	if (LINES > 13 + ln_supp * 4) //version complète
+	{
+		mvprintw(2, 4, "COLORATION %s\n\n", VERSION);
+		printw("    Éditeur de texte inspiré de GNU nano.\n\n\n");
+		printw("    Ce projet a pour but de faciliter la visualisation et l'édition des\n    fichiers de scénario (listes d'objets) de mon projet de jeu d'aventure.\n\n");
+		#ifndef _ACCENTS_H
+		printw("    Cette version contient un support minimal des accents.\n    Incluez \"accents.h\" avant la compilation pour avoir un support complet.\n\n");
+		#endif
+		printw("\n    Programmé par Nicolas Audette.\n\n\n");
+		printw("    Appuyez sur Escape ou Enter pour quitter.");
+	}
+	else //version abrégée
+	{
+		mvprintw(1, 1, "COLORATION %s\n", VERSION);
+		printw(" Éditeur de texte inspiré de GNU nano et ayant\n pour but de faciliter l'édition des listes d'objets\n (scénarios) de mon projet de jeu d'aventure.\n");
+		#ifndef _ACCENTS_H
+		printw(" Cette version contient un support minimal seulement des accents.\n");
+		#endif
+		printw("\n Programmé par Nicolas Audette.\n\n");
+		printw(" Appuyez sur Escape ou Enter pour quitter.");
+	}
 	
-	while (strcmp(keyname(input), "^[") != 0 && strcmp(keyname(input), "^M") != 0 && strcmp(keyname(input), "^Q") != 0)
+	while (strcmp(keyname(input), "^[") != 0 && strcmp(keyname(input), "^M") != 0 && strcmp(keyname(input), "^Q") != 0 && input != 'q' && input != KEY_RESIZE)
 	{input = getch();}
+	
+	if (input == KEY_RESIZE && (LINES < 8 + ln_supp || COLS < 41))
+	{rafraichir(); print_msg("Terminal trop petit pour afficher les crédits."); return;}	
+	if (input == KEY_RESIZE)
+	{credits();}
+	
 	rafraichir();
 }
 
@@ -61,6 +90,13 @@ void param_avances()
 	{mvprintw(LINES - 1, 31, "Modifier la valeur du paramètre");}
 	if (COLS > 98)
 	{mvprintw(LINES - 1, 71, "Naviguer dans les paramètres");}
+	
+	//Affichage du niveau de support des accents:
+	#ifdef _ACCENTS_H
+	mvprintw(LINES - 4, 4, "Prise en charge complète des accents.");
+	#else
+	mvprintw(LINES - 4, 4, "Prise en charge PARTIELLE des accents (programme compilé sans accents.h).");
+	#endif
 	
 	while (strcmp(keyname(input), "^[") != 0 && strcmp(keyname(input), "^Q") != 0)
 	{
@@ -163,10 +199,11 @@ void param_avances()
 			break;
 		
 		case KEY_RESIZE:
-			if (LINES < 5 + nbre_p_avances || COLS < 25)
+			if (LINES < 6 + nbre_p_avances || COLS < 25)
 			{
 				rafraichir();
-				print_msg("Terminal trop petit pour afficher les paramètres avancés.");
+				print_msg("Terminal trop petit pour afficher les paramètres avancés."); //Ne s'affiche jamais pour une raison TRÈS OBSCURE et inconnue...
+				//Si je met un DEBUG_RADICAL ici, il fonctionne, pourtant...
 				return;
 			}
 			else
@@ -244,12 +281,12 @@ void param_avances()
 
 bool enregistrer_parametres()
 //Enregistre les paramètres avancés actuels dans le fichier de configuration fconfig.
-//Renvoie 1 en cas de succès et 0 en cas d'erreur.
+//Renvoie TRUE en cas de succès et FALSE en cas d'erreur.
 {
 	FILE* fconfig = fopen(nom_fconfig, "w+");
 	
 	if (fconfig == NULL)
-	{erreur(20, "Impossible de créer un fichier de configuration avec ce nom"); return 0;}
+	{erreur(20, "Impossible de créer un fichier de configuration avec ce nom"); return FALSE;}
 	
 	fprintf(fconfig, "Fichier de configuration de l'éditeur de texte Coloration.\n");
 	fprintf(fconfig, "Ce fichier a été généré automatiquement et sera écrasé à chaque modification des paramètres avancés de l'éditeur.\nModifiez-le à vos propres risques.\n\n");
@@ -282,7 +319,7 @@ bool enregistrer_parametres()
 	}
 	
 	fclose(fconfig);
-	return 1;
+	return TRUE;
 }
 
 

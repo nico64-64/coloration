@@ -7,13 +7,16 @@
 #include <locale.h>
 #include <time.h>
 
+//Gestion avancée/complète des accents:
+#include "accents.h"
+
 
 #ifndef _COLORATION_H
 #define _COLORATION_H
 
 
 //Version du programme:
-#define VERSION "0.3.3"
+#define VERSION "0.3.4"
 
 
 //Valeurs Macros:
@@ -51,7 +54,7 @@ enum _type
 	_pas_un_element = 0, //cette ligne n'étant pas un élément, cette enum est inutile
 	
 	//Éléments nécessitant un POINTEUR:
-	_endroit,
+	_endroit = 1,
 	_dest,
 	_imp,
 	_d_i,
@@ -111,7 +114,7 @@ struct commande
 	char nom[30];
 	char touche[10];
 	char descr[200];
-	char details[1200];
+	char details[1300];
 	int cmd_liees[3];
 };
 
@@ -142,7 +145,7 @@ commande cmds[] =
 	{7, "Ouvrir un fichier", "^N", "Ouvrir un autre fichier ou en créer un.", "Utilisez cette commande pour ouvrir un autre fichier avec Coloration.\nVous devrez entrer le chemin d'accès au fichier depuis l'endroit d'où vous avex démarré Coloration.\nNotez bien que tout changement non sauvegrdé au fichier en cours de modification sera perdu, puisque l'éditeur sera redémarré.", {1, 5, 6}},
 	{8, "Aller à", "^L", "Envoyer le curseur à une certaine ligne.", "Utilisez cette commande pour emmener rapidement votre curseur au début d'une certaine ligne du fichier.", {21, 22, 9}},
 	{9, "Trouver & remplacer", "^F", "Trouver (et remplacer) une expression dans le fichier.", "Fonctionnalité à venir.\nÀ Faire!", {21, 22, 8}},
-	{10, "Ligne de commande", "^P", "Envoyer une commande à l'éditeur", "Ouvre une ligne de commande Coloration en bas de l'écran.\nVoici la liste des commandes acceptées par cette ligne de commande ainsi qu'une brève description de leur effet ou une référence à l'article approprié de ce manuel:\n- aide -> voir \"Aide\"\n- rafraichir -> voir \"Rafraichir\"\n- ligne / aller / aller à (Argument facultatif: numéro de ligne / \"DEBUT\" / \"FIN\") -> Emmène le curseur à la ligne fournie en argument ou effectue la commande \"Aller à\" si aucun argument n'est fourni. Effectue la commande \"Aller au -DÉBUT-\" ou \"Aller à la -FIN-\" si l'argument y correspond.\n- DEBUT -> voir \"Aller au -DÉBUT-\"\n- FIN -> voir \"Aller à la -FIN-\"\n- compiler -> voir \"Compiler la liste\"\n- terminal / term -> voir \"Accès au terminal\"\n- enregistrer / enregistrer comme / enregistrer sous / enr (Argument facultatif: nom du fichier) -> Effectue la commande \"Enregistrer\" si aucun argument n'est fourni ou enregistre le fichier ouvert sous le nom fourni (au même endroit).\n- sauvegarder / sauv -> Voir \"Sauvegarder\".\n- ouvrir / nouveau / ouv / nouv -> voir \"Ouvrir un fichier\". Vous pouvez aussi spécifier le nom du fichier en argument.\n- menu / options -> Voir \"Menu des options\".\n", {11, 2, 0}},
+	{10, "Ligne de commande", "^P", "Envoyer une commande à l'éditeur", "Ouvre une ligne de commande Coloration en bas de l'écran.\nVoici la liste des commandes acceptées par cette ligne de commande ainsi qu'une brève description de leur effet ou une référence à l'article approprié de ce manuel:\n- aide -> voir \"Aide\"\n- rafraichir -> voir \"Rafraichir\"\n- ligne / aller / aller à (Argument facultatif: numéro de ligne / \"DEBUT\" / \"FIN\" / \"fin\") -> Emmène le curseur à la ligne fournie en argument ou effectue la commande \"Aller à\" si aucun argument n'est fourni. Effectue la commande \"Aller au -DÉBUT-\" ou \"Aller à la -FIN-\" si l'argument y correspond. Emmène le curseur à la dernière ligne du fichier si l'argument est \"fin\".\n- DEBUT -> voir \"Aller au -DÉBUT-\"\n- FIN -> voir \"Aller à la -FIN-\"\n- compiler -> voir \"Compiler la liste\"\n- terminal / term -> voir \"Accès au terminal\"\n- enregistrer / enregistrer comme / enregistrer sous / enr (Argument facultatif: nom du fichier) -> Effectue la commande \"Enregistrer\" si aucun argument n'est fourni ou enregistre le fichier ouvert sous le nom fourni (au même endroit).\n- sauvegarder / sauv -> Voir \"Sauvegarder\".\n- ouvrir / nouveau / ouv / nouv -> voir \"Ouvrir un fichier\". Vous pouvez aussi spécifier le nom du fichier en argument.\n- menu / options -> Voir \"Menu des options\".\n", {11, 2, 0}},
 	{11, "Accès au terminal", "^T", "Entrer une commande système.", "Permet d'entrer une commande bash depuis Coloration.\nEntrez Ctrl-T une deuxième fois pour que l'éditeur s'efface, laissant place à une toute nouvelle console bash prenant le contrôle de l'entièreté du terminal. Dans ce cas, n'oubliez pas d'entrer la commande bash \"exit\" pour revenir à l'éditeur.", {10, 0, 0}},
 	{12, "Compter caractères", "^W", "Compter les caractères sélectionnés ou du fichier complet.", \
 		"Indique combien de caractères on été sélectionnés. Si aucun caractère n'est sélectionné, le nombre de caractère total du fichier ouvert s'affichera.", {0, 0, 0}},
@@ -155,17 +158,18 @@ commande cmds[] =
 	{17, "Coller", "^V", "Coller le texte copié.", "Colle le contenu du presse-papier interne à l'endroit où se trouve le curseur.\nSi du texte était sélectionné, celui-ci sera écrasé. Si le presse-papier interne est vide, rien ne se passera et un message s'affichera.\nLe presse-papier étant interne, le texte copié doit l'avoir été dans le même fichier et dans la même instance de Coloration.", {16, 18, 0}},
 	{18, "Couper", "^X", "Couper le texte sélectionné.", \
 		"Copie la sélection dans un presse-papier interne, afin de pouvoir être collée plus tard (dans le même document), puis supprimme le texte copié du fichier.\nNe fais rien si aucun caractère n'est sélectionné.", {16, 17, 0}},
-	{19, "Début de ligne", "Home", "Envoyer le curseur au début de la ligne.", "Emmène le curseur au début de la ligne où il se trouve (après le dernier \"Enter\").", {20, 21, 0}},
-	{20, "Fin de ligne", "End", "Envoyer le curseur à la fin de la ligne.", "Emmène le curseur à la fin de la ligne où il se trouve (avant le prochain \"Enter\").", {19, 22, 0}},
-	{21, "Aller au -DÉBUT-", "Sh-Home", "Envoyer le curseur au début de l'objet.", "Appuyez sur Shift-Home pour emmener votre curseur à l'endroit où est écrit \"-DÉBUT-\" dans le fichier ouvert. Il s'agit du début d'une liste d'objets du projet \"text-adventure game\" (voir \"Compiler la liste\"), si ce fichier en est une.\nNe fais rien s'il n'y a pas de \"-DÉBUT-\" dans ce fichier.\nDans certains terminaux (exemple: console Linux (tty)), Shift-Home n'est pas détecté. Il faut alors passer par la commande correspondante (\"DEBUT\") (voir \"Ligne de commande\").", {13, 10, 22}},
-	{22, "Aller à la -FIN-", "Sh-End", "Envoyer le curseur à la fin de l'objet.", "Appuyez sur Shift-End pour emmener votre curseur à l'endroit où est écrit \"-FIN-\" dans le fichier ouvert. Il s'agit de la fin d'une liste d'objets du projet \"text-adventure game\" (voir \"Compiler la liste\"), si ce fichier en est une.\nNe fais rien s'il n'y a pas de \"-FIN-\" dans ce fichier.\nDans certains terminaux (exemple: console Linux (tty)), Shift-End n'est pas détecté. Il faut alors passer par la commande correspondante (\"FIN\") (voir \"Ligne de commande\").", {13, 10, 21}},
+	{19, "Aller au début", "^Home", "Aller à la première ligne du fichier.", "Appuyez sur Ctrl-Home pour revenir à la prmière ligne du fichier.\nDans certains terminaux (exemple: console Linux (tty)), Ctrl-Home n'est pas détecté. On peut alors utiliser la fonction \"Aller à\" à la place.", {20, 21, 8}},
+	{20, "Aller à la fin", "^End", "Aller à la dernière ligne du fichier.", "Appuyer sur Ctrl-End pour aller à la dernière ligne du fichier.\nDans certains terminaux (exemple: console Linux (tty)), Ctrl-End n'est pas détecté. On peut alors utiliser la commande \"aller fin\" (voir \"Ligne de commande\") à la place.", {19, 22, 10}},
+	{21, "Aller au -DÉBUT-", "M-Home", "Envoyer le curseur au début de l'objet.", "Appuyez sur Alt-Home pour emmener votre curseur à l'endroit où est écrit \"-DÉBUT-\" dans le fichier ouvert. Il s'agit du début d'une liste d'objets du projet \"text-adventure game\" (voir \"Compiler la liste\"), si ce fichier en est une.\nNe fais rien s'il n'y a pas de \"-DÉBUT-\" dans ce fichier.\nDans certains terminaux (exemple: console Linux (tty)), Alt-Home n'est pas détecté. Il faut alors passer par la commande correspondante (\"DEBUT\") (voir \"Ligne de commande\").", {13, 10, 22}},
+	{22, "Aller à la -FIN-", "M-End", "Envoyer le curseur à la fin de l'objet.", "Appuyez sur Alt-End pour emmener votre curseur à l'endroit où est écrit \"-FIN-\" dans le fichier ouvert. Il s'agit de la fin d'une liste d'objets du projet \"text-adventure game\" (voir \"Compiler la liste\"), si ce fichier en est une.\nNe fais rien s'il n'y a pas de \"-FIN-\" dans ce fichier.\nDans certains terminaux (exemple: console Linux (tty)), Alt-End n'est pas détecté. Il faut alors passer par la commande correspondante (\"FIN\") (voir \"Ligne de commande\").", {13, 10, 21}},
 	{23, "Rafraichir", "^R", "Redessiner le terminal et afficher les messages d'erreur.", \
 		"Redessine l'écran de Coloration sur le terminal, permettant parfois de régler quelques petits glitchs.\nAffiche aussi tout message d'erreur en attente dans la barre d'état.", {24, 0, 0}},
-	{24, "Débogage", "^D", "Activer ou désactiver le mode débogage.", "Appuyer sur Ctrl-D pour activer/désactiver le mode débogage.\nVous pouvez aussi changer de mode de débogage en appuyant sur M-# (Alt-Car 3). Il y a 3 modes de débogage: \"input\" (affiche le nom de la touche appuyée), \"position\" (affiche la position du curseur dans le fichier) et \"input (raw)\" (donne la valeur numérique de la touche appuyée).\nCette fonctionnalité est une des seules à ne pas avoir de commande correspondante. Ctrl-D est la seule manière de l'activer.", {23, 0, 0}},
+	{24, "Débogage", "^D", "Activer ou désactiver le mode débogage.", "Appuyer sur Ctrl-D pour activer/désactiver le mode débogage.\nVous pouvez aussi changer de mode de débogage en appuyant sur M-# (Alt-Car 3). Il y a 4 modes de débogage: \"input\" (affiche le nom de la touche appuyée), \"position\" (affiche la position du curseur dans le fichier), \"tag/type\" (affiche le tag et le type (s'il y a lieu) de la ligne où se trouve le curseur) et \"input (raw)\" (donne la valeur numérique de la touche appuyée).\nCette fonctionnalité est une des seules à ne pas avoir de commande correspondante. Ctrl-D est la seule manière de l'activer.", {23, 25, 26}},
 	{25, "Col. syntaxique", "F1", "Activer ou désactiver la coloration syntaxique.", "Active/Désactive la coloration syntaxique.\nCette coloration suit la syntaxe d'un fichier de liste d'objets source du projet \"text-adventure game\" (voir \"Compiler la liste\").\nAssurez-vous d'appuyer sur Fn en même temps que F1 pour que cela fonctionne.\nLa coloration syntaxique suivant la syntaxe attendue, elle n'apparaitra pas si le fichier n'est pas syntaxiquement conforme (voir \"Aller au -DÉBUT-\" et \"Aller à la -FIN-\").", {13, 21, 22}},
-	{26, "Paramètres avancés", "", "Modifier certains paramètres avancés.", "Accessible par le menu des options uniquement, les paramètres avancés comprennent quelques options de débogage ainsi que quelque variables internes modifiables par l'utilisateur.\nLa modification de ces paramètres n'est pas recommandée.", {2, 1, 0}},
+	{26, "Paramètres avancés", "", "Modifier certains paramètres avancés.", "Accessible par le menu des options uniquement, les paramètres avancés comprennent quelques options de débogage ainsi que quelque variables internes modifiables par l'utilisateur.\nLa modification de ces paramètres n'est pas recommandée.", {2, 1, 27}},
+	{27, "Support des accents", "", "Informations sur la gestion des accents par Coloration.", "Plusieurs terminaux ne supportent pas nativement l'utilisation des accents.\nPour contourner ce problème, Coloration implante son propre système de gestion des accents directement relié à la valeur numérique reçue du clavier.\n \nColoration est normalement compilé en incluant un fichier nommé \"accents.h\", lequel est essentiel au support complet des caractères accentués.Si ce fichier n'a pas été inclus à la compilation, seul un support limité sera disponible, c'est-à-dire que les accents déjà présents dans un fichier (ou ceux présent dans l'interface) seront très bien lus, mais que vous ne pourrez pas en ajouter des nouveaux (tout accent reçu du clavier sera soit ignoré ou bien transformé en \"?\").\n \nLes système de gestion des accents est également limité aux accents fréquemment utilisé dans la langue française (soit les caractères suivants, en majuscules en en misucules: àâä éèêë îï ôö ùû ç). Toutefois, si le support complet des accents est disponible dans votre version, vous pourrez aussi définir manuellement jusqu'à 6 \"accents\" supplémentaires.\nSi le support complet est activé, vous pouvez aussi changer la valeur numérique des accents dans les paramètres avancés de l'éditeur pour que l'éditeur s'adapte à votre clavier.", {26, 1, 0}}
 };
-const int nbre_cmds = 26;
+const int nbre_cmds = 27;
 
 //Paramètres avancés:
 bool err_log = FALSE; //indique si les erreurs doivent être logguées dans un fichier (désactivé par défaut parce qu'à part remplir le fichier de lignes vides / "Initialisation...", ça ne fait rien d'utile)
@@ -191,7 +195,7 @@ ligne FIN_FICHIER; //variable dont l'adresse sert à représenter la fin du fich
 //Débogage:
 bool debogage = FALSE; //indique si le mode débogage est activé
 char element_debogue = 'i'; //indique ce qui est débogué (lorsque le mode débogage est activé)
-							//Valeurs possibles: i = input, p = position, n = input (raw)
+							//Valeurs possibles: i = input, p = position, t = tag/type, n = input (raw)
 							
 //Gestion du fichier ouvert:
 char nom_fichier[100] = ""; //nom du fichier actuellement modifié (buffer assez grand pour (entre autres) accomoder tout le chemin d'accès au fichier, si nécessaire...)
@@ -203,7 +207,7 @@ int y = 1; //position en y du curseur sur l'écran
 int x = 4; //position en x du curseur sur l'écran
 int premiere_ligne = 1; //numéro de la ligne la plus haute à l'écran
 int derniere_ligne = 10; //numéro de la ligne la plus basse à l'écran
-int pos_y = 1; //position en y dans la "ligne" modifiée par le curseur (soit le numéro de ligne dans cette ligne, pour lorsqu'elle est trop longue)
+int pos_y = 1; //position en y dans la "ligne" modifiée par le curseur (soit le "numéro de ligne" multiligne dans cette ligne, pour lorsqu'elle est trop longue)   /!\ Attention! Cette variable commence à 1 (et non 0)!
 ligne* ln_mod; //ligne modifiée présentement (ligne où se trouve le curseur)
 
 //Autres:
@@ -219,9 +223,15 @@ bool barre_dispo = TRUE; //indique si un message est présentement affiché dans
 #define mv(position_y, position_x);		move(position_y, position_x); y = position_y; x = position_x; //permet de déplacer le curseur tout en mettant les variables x et y à jour (remplacement de "move")
 #define mvaddstrc(position_y, texte);	mvaddstr(position_y, (COLS - longueur_str(texte)) / 2, texte); //affiche une string centrée (sur une ligne y)
 
-//Affichage personnalisé:
+//Initialisation et libération de la mémoire:
 #define init();		for (int _COMPTEUR = 1; init_ligne(_COMPTEUR) != NULL; _COMPTEUR++) {} //initialise toutes les lignes du fichier
 #define desinit();	for (int _COMPTEUR = init_ligne(0)->num; _COMPTEUR >= 1; _COMPTEUR--) {init_ligne(-_COMPTEUR);} //libère toute les lignes du fichier
+
+//Gestion de base des accents si accents.h n'est pas inclus:
+#ifndef _ACCENTS_H
+#define est_un_accent(car)	(car == 169 || car == 137 || car == 168 || car == 136 || car == 170 || car == 138 || car ==	171 || car == 139 || car ==	160 || car == 128 || car ==	162 || car == 130 || car ==	164 || car == 132 \
+							|| car ==	174 || car == 142 || car ==	175 || car == 143 || car ==	180 || car == 148 || car ==	182 || car == 150 || car ==	185 || car == 153 || car ==	187 || car == 155 || car ==	167 || car == 135)
+#endif
 
 //Gestion des erreurs et débogage:
 #define msg_printf(txt, ...);		char _INTERNAL_BUFFER_[400]; sprintf(_INTERNAL_BUFFER_, txt, __VA_ARGS__); print_msg(_INTERNAL_BUFFER_); //Affiche un message en style printf (à éviter...)
@@ -254,8 +264,13 @@ void param_avances (); //affiche et gère la fenêtre des paramètres avancés
 
 //outils_logiques.c:
 int compter_lignes(ligne* ln); //compte le nombre de lignes (à l'écran) qu'occupe une ligne du fichier
+#ifdef _ACCENTS_H 
+bool est_un_accent(int car); //indique si le caractère reçu est un accent ou pas
+#endif
 ligne* init_ligne (int num); //initialise la structure d'une ligne en la lisant dans le fichier ouvert
 int longueur_str (char str[]); //trouve le nombre de caractères d'une string en tenant compte des accents
+bool match_accent (int car, char accent[]); //convertit un accent reçu du clavier (int) en ce même caractère en format string
+int relativise_pos (char str[], int pos); //trouve la position réelle du curseur dans une string contenant des accents
 ligne* trouve_ligne (int num); //renvoie un pointeur vers la ligne correspondant au numéro de ligne reçu
 ligne* trouve_tag (_tag tag, ligne* depart); //renvoie la première ligne ayant un certain tag d'assigné depuis la ligne de départ (ou le début du fichier si depart est NULL)
 

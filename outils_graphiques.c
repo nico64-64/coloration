@@ -104,25 +104,25 @@ void bordures()
 								mvaddch(LINES - 2, 108, '^'); addch(ACS_DARROW);
 								mvaddch(LINES - 1, 108, '^'); addch(ACS_UARROW);
 								
-								if (COLS >= 157)
+								if (COLS >= 153)
 								{
-									mvprintw(LINES - 2, 130, "Shift-Home");
-									mvprintw(LINES - 1, 130, "Shift-End ");
+									mvprintw(LINES - 2, 130, "M-Home");
+									mvprintw(LINES - 1, 130, "M-End ");
 									
-									if (COLS >= 180)
+									if (COLS >= 176)
 									{
-										mvprintw(LINES - 2, 159, "^W");
-										mvprintw(LINES - 1, 159, "^T");
+										mvprintw(LINES - 2, 155, "^W");
+										mvprintw(LINES - 1, 155, "^T");
 										
-										if (COLS >= 203)
+										if (COLS >= 199)
 										{
-											mvprintw(LINES - 2, 182, "Esc");
-											mvprintw(LINES - 1, 182, "^G ");
+											mvprintw(LINES - 2, 178, "Esc");
+											mvprintw(LINES - 1, 178, "^G ");
 											
-											if (COLS >= 229)
+											if (COLS >= 225)
 											{
-												mvprintw(LINES - 2, 205, "F1");
-												mvprintw(LINES - 1, 205, "^D");
+												mvprintw(LINES - 2, 201, "F1");
+												mvprintw(LINES - 1, 201, "^D");
 											}
 	}}}}}}}}}} //Raccourcis inutilisables: ^M (=enter), ^I (=tab), M-... (tous les Alt- ne fonctionnent pas...)
 	
@@ -169,25 +169,25 @@ void bordures()
 								mvprintw(LINES - 2, 111, "Prochain élément");
 								mvprintw(LINES - 1, 111, "Élément précédent");
 								
-								if (COLS >= 157)
+								if (COLS >= 153)
 								{
-									mvprintw(LINES - 2, 141, "Aller au -DÉBUT-");
-									mvprintw(LINES - 1, 141, "Aller à la -FIN-");
+									mvprintw(LINES - 2, 137, "Aller au -DÉBUT-");
+									mvprintw(LINES - 1, 137, "Aller à la -FIN-");
 									
-									if (COLS >= 180)
+									if (COLS >= 176)
 									{
-										mvprintw(LINES - 2, 162, "Compter Caractères");
-										mvprintw(LINES - 1, 162, "Accès au Terminal");
+										mvprintw(LINES - 2, 158, "Compter Caractères");
+										mvprintw(LINES - 1, 158, "Accès au Terminal");
 										
-										if (COLS >= 203)
+										if (COLS >= 199)
 										{
-											mvprintw(LINES - 2, 186, "Menu des Options");
-											mvprintw(LINES - 1, 186, "Compiler la Liste");
+											mvprintw(LINES - 2, 182, "Menu des Options");
+											mvprintw(LINES - 1, 182, "Compiler la Liste");
 											
-											if (COLS >= 229)
+											if (COLS >= 225)
 											{
-												mvprintw(LINES - 2, 208, "Coloration Syntaxique");
-												mvprintw(LINES - 1, 208, "Mode Débogage");
+												mvprintw(LINES - 2, 204, "Coloration Syntaxique");
+												mvprintw(LINES - 1, 204, "Mode Débogage");
 											}
 	}}}}}}}}}}
 }

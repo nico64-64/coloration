@@ -489,7 +489,6 @@ void cmd(char commande[])
 		//Liste des options:
 		mvprintw(LINES - 1, 4, "Annuler");
 		mvprintw(LINES - 1, 16, "Aide");
-		//mvprintw(LINES - 1, 25, "Options");
 		
 		//Effaçage de la ligne de commande
 		attrset(COLOR_PAIR(10));
@@ -498,7 +497,6 @@ void cmd(char commande[])
 		//Écriture des raccourcis:
 		mvprintw(LINES - 1, 1, "^C");
 		mvprintw(LINES - 1, 13, "^A");
-		//mvprintw(LINES - 1, 22, "^O");
 		
 		//Mise en forme de la ligne de commande:
 		mvprintw(LINES - 2, 1, "Commande: ");
@@ -567,6 +565,8 @@ void cmd(char commande[])
 		{cmd("DÉBUT"); buffln = NULL;}
 		else if (!strcmp(mot[1], "FIN"))
 		{cmd("FIN"); buffln = NULL;}
+		else if (!strcmp(mot[1], "fin"))
+		{buffln = aller_a(FIN_FICHIER.num - 1);}
 		else
 		{
 			sscanf(mot[1], "%d", &buffint);
@@ -672,6 +672,8 @@ int main(int argc, char* argv[])
 {
 	int input = EOF; //caractère reçu en input (doit être déclaré int pour accepter les accents, Ctrl-car., etc.)
 	char buffer[20] = "";
+	int buffint;
+	int buffint2;
 	
 	
 	//Arguments:
@@ -735,9 +737,17 @@ int main(int argc, char* argv[])
 	//Main Loop:
 	while (1)
 	{
-		//Débogage de la position:
-		if (debogage && element_debogue == 'p' && barre_dispo)
-		{msg_printf("Ligne #%d.%d", ln_mod->num, pos_y);}
+		//Débogage de la position ou du tag/type:
+		if (debogage && barre_dispo)
+		{
+			//Position:
+			if (element_debogue == 'p')
+			{msg_printf("Ligne #%d.%d, Col. #%d", ln_mod->num, pos_y, x-4);}
+			
+			//Tag/type:
+			else if (element_debogue == 't')
+			{msg_printf("Tag %d (type %d)", ln_mod->tag, ln_mod->type);}
+		}
 		
 		//Prise de l'input:
 		do
@@ -896,16 +906,50 @@ int main(int argc, char* argv[])
 			mv(y, x);
 			break;
 		
-		case KEY_SHOME: //Shift-Home = aller au -DÉBUT-
-			cmd("DEBUT");
+		case KEY_SHOME: //Shift-Home = aller au début du paragraphe
+			//...
 			break;
 		
-		case KEY_SEND: //Shift-End = aller à la -FIN-
-			cmd("FIN");
+		case KEY_SEND: //Shift-End = aller à la fin du paragraphe
+			//...
+			break;
+		
+		case KEY_BACKSPACE: //Backspace = Effacer vers l'arrière
+			//...
+			break;
+		
+		case KEY_DC: //Delete = Effacer vers l'avant
+			//...
 			break;
 		
 		default:
-			if (keyname(input)[0] == '^')
+			if (isprint(input) || est_un_accent(input))
+			//Caractères imprimables:
+			{
+				//Attention: logique et calculs obscurs! Code fortement commenté pour tenter de compenser...
+				
+				//Préparation et Insertion:
+				buffint = x; //L'affichage de la ligne modifiée nous fera perdre notre position, donc on doit la conserver quelque part...
+				mv(y - pos_y + 1, x); //Pour que la ligne s'affiche au bon endroit, le curseur doit être dans la première ligne de la ligne... (le +1 vient du fait que multiligne commence à 1)
+				buffint2 = ln_mod->multiligne; //Cette valeur sera peut-être modifiée par notre ajout, et si c'est le cas, il va falloir redessiner l'écran au complet, alors on doit garder une copie de cette valeur...
+				if (!insere_car(ln_mod->txt, input, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)), sizeof(ln_mod->txt))) //Insertion du caractère dans la ligne! (relativise_pos compense pour les accents)
+				{erreur(40, "Ce caractère a été détecté comme étant imprimable, mais ne l'est pas. Quoi?!"); erreur(0, "..."); break;} //Ne devrait jamais arriver (sauf si je me plante comme il faut dans mon code), mais bon...
+				
+				//Affichage et Positionnement:
+				afficher_ligne(ln_mod); //affichage de la ligne modifiée (et recalcul de son nombre de lignes (multiligne))
+				if (buffint2 == ln_mod->multiligne) //Si notre caractère n'a pas changé le multiligne de la ligne, on peut juste replacer le curseur et on a probablement terminé.
+				{mv(y - 1 - ln_mod->multiligne + pos_y, buffint + 1);} //On remonte de 1 ligne (afficher_ligne est faite comme ça, ok...) + l'inverse de notre pos_y en base multiligne (ish...) & on avance de 1 en x vs notre x initial.
+				else if (buffint >= COLS - 2) //Si le caractère qu'on vient d'ajouter fait "directement" augmenter le multiligne de la ligne, il faut redessiner l'écran au complet et utiliser un calcul différent.
+				{rafraichir(); pos_y++; mv(y - 1, 5);} //On descend logiquement d'une "sous-ligne", puis on remonte graphiquement (et positionellement, ish...) d'une ligne (même raison que le calcul précédent).
+				else //Sinon (donc si on a fait augmenter le multiligne mais que ce n'est pas ce caractère qui se retrouve sur la nouvelle "sous-ligne" "finale"), on redessine tout quand même, mais on utilise le 1er calcul.
+				{rafraichir(); mv(y - 1 - ln_mod->multiligne + pos_y, buffint + 1);}
+				
+				//Ajustement au positionnement:
+				if (x >= COLS - 1 && pos_y < ln_mod->multiligne) //Si on se ramasse à la fin avec un curseur dans la dernière colonne de l'écran (donc trop loin) et qu'on n'est pas à la toute fin de la ligne...
+				{mv(y+1, 4); pos_y++;} //...on descend le curseur (logiquement, graphiquement, positionellement et tout ce que tu veux, rendu là...) à la première "vraie" colonne (donc #4) de la "sous-ligne" suivante.
+			}
+			
+			else if (keyname(input)[0] == '^')
 			//Ctrl-...
 			{
 				switch (keyname(input)[1])
@@ -962,6 +1006,10 @@ int main(int argc, char* argv[])
 				case 'G': //Ctrl-G = Compiler la liste
 					cmd("compiler");
 					break;
+				
+				case 'M': //Ctrl-M = Enter
+					//...
+					break;
 				}
 			}
 			else if (keyname(input)[0] == 'M' && keyname(input)[1] == '-')
@@ -975,6 +1023,8 @@ int main(int argc, char* argv[])
 						if (element_debogue == 'i')
 						{element_debogue = 'p'; print_msg("Mode de débogage: position");}
 						else if (element_debogue == 'p')
+						{element_debogue = 't'; print_msg("Mode de débogage: tag/type");}
+						else if (element_debogue == 't')
 						{element_debogue = 'n'; print_msg("Mode de débogage: input (raw)");}
 						else
 						{element_debogue = 'i'; print_msg("Mode de débogage: input");}
@@ -995,6 +1045,68 @@ int main(int argc, char* argv[])
 					break;
 				}
 			}
+			
+			//Combinaisons de touches n'ayant pas de nom standard:
+			
+			else if (!strcmp(keyname(input), "kDN5")) //Ctrl-Down = Aller au prochain paragraphe
+			{
+				if (ln_mod->num == FIN_FICHIER.num - 1)
+				{print_msg("Vous avez atteint la fin du fichier.");}
+				else
+				{
+					do //va à la fin du paragraphe actuel
+					{
+						sprintf(buffer, "ligne %d", ln_mod->num + 1);
+						cmd(buffer);
+					} while (ln_mod->tag != 0 && ln_mod->num < FIN_FICHIER.num - 1);
+					
+					while (!ln_mod->tag && ln_mod->num < FIN_FICHIER.num - 1) //va au début du prochain paragraphe
+					{
+						sprintf(buffer, "ligne %d", ln_mod->num + 1);
+						cmd(buffer);
+					}
+					
+					if (ln_mod->num == FIN_FICHIER.num - 1)
+					{print_msg("Vous avez atteint la fin du fichier.");}
+				}
+			}
+			
+			else if (!strcmp(keyname(input), "kUP5")) //Ctrl-Up = Revenir au début du paragraphe (ou à celui du paragraphe précédent)
+			{
+				if (ln_mod->num == 1)
+				{print_msg("Vous avez atteint le début du fichier.");}
+				else
+				{
+					do //va à la fin du paragraphe précédent
+					{
+						sprintf(buffer, "ligne %d", ln_mod->num - 1);
+						cmd(buffer);
+					} while (!ln_mod->tag && ln_mod->num > 1);
+					
+					while (ln_mod->tag != 0 && ln_mod->num > 1) //va à la ligne vide juste avant le début du paragraphe actuel
+					{
+						sprintf(buffer, "ligne %d", ln_mod->num - 1);
+						cmd(buffer);
+					}
+					
+					if (ln_mod->num == 1)
+					{print_msg("Vous avez atteint le début du fichier.");}
+					else //redescend d'une ligne pour compenser la ligne de trop de l'étape précédente
+					{
+						sprintf(buffer, "ligne %d", ln_mod->num + 1);
+						cmd(buffer);
+					}
+				}
+			}
+			
+			else if (!strcmp(keyname(input), "kHOM3")) //Alt-Home = Aller au -DÉBUT-
+			{cmd("DEBUT");}
+			else if (!strcmp(keyname(input), "kEND3")) //Alt-End = Aller à la -FIN-
+			{cmd("FIN");}
+			else if (!strcmp(keyname(input), "kHOM5")) //Ctrl-Home = Aller au début du document
+			{cmd("ligne 1");}
+			else if (!strcmp(keyname(input), "kEND5")) //Ctrl-End = Aller à la fin du document
+			{cmd("aller fin");}
 		}
 	}
 }
