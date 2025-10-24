@@ -48,7 +48,7 @@ int erreur(int code, char message[])
 		if (!nbre_erreurs)
 		{return 0;} //aucune erreur à afficher
 		
-		if (isendwin())
+		if (isendwin() || stdscr == NULL)
 		{printf("Erreur %d: %s\n", codes[nbre_erreurs - 1], msgs[nbre_erreurs - 1]);}
 		else
 		{
@@ -297,7 +297,7 @@ void term()
 	else
 	{
 		system(commande); //envoie la commande pour que la shell l'exécute
-		printf("\nAppuyer sur \"Enter\" pour revenir à l'éditeur."); //petit rappel affiché dans la console, une fois la commande exécutée
+		printf("\nAppuyez sur \"Enter\" pour revenir à l'éditeur."); //petit rappel affiché dans la console, une fois la commande exécutée
 		getchar(); //on attend un input de l'utilisateur pour lui laisser le temps de lire l'output de sa commande
 				   //J'ai choisi d'utiliser getchar() parce que getch() ne fonctionne pas vraiment bien dans ce contexte, et puisqu'on ne prend qu'un seul caractère (même si on entre ensuite une nouvelle commande,
 				   // les 2 getchar() seront entrecoupés par ncurses), donc les folies rageantes de getchar() ne devraient pas nous affecter...
@@ -626,7 +626,7 @@ void cmd(char commande[])
 		endwin();
 		printf("\n");
 		system(compilateur_liste);
-		printf("Liste compilée.\nAppuyer sur \"Enter\" pour revenir à l'éditeur.\n");
+		printf("Liste compilée.\nAppuyez sur \"Enter\" pour revenir à l'éditeur.\n");
 		while (getchar() != '\n') {} //J'haïs vraiment comment getchar (ne) fonctionne (pas)...
 		rafraichir();
 	}
@@ -688,6 +688,10 @@ int main(int argc, char* argv[])
 	//Lecture des réglages (paramètres avancés):
 	lire_parametres();
 	
+	//Indication de l'ouverture de l'application si le log des erreurs est activé:
+	if (err_log)
+	{erreur(0, "init");}
+	
 	//Ouverture du fichier:
 	if (!strcmp(nom_fichier, ""))
 	{printf("Veuillez spécifier un fichier contenant une liste d'objets à éditer ou afficher\nou entrer \"%s -?\" pour en apprendre plus.\n\n", argv[0]); exit(0);}
@@ -695,6 +699,11 @@ int main(int argc, char* argv[])
 	if (fichier == NULL)
 	{printf("Impossible d'ouvrir le fichier \"%s\".\nExiste-t-il? Assurez-vous d'entrer le chemin complet ou le chemin relatif à ce dossier.\n\n", nom_fichier); exit(1);}
 	
+	//Lecture de la base de données des accents:
+	#ifdef _ACCENTS_H
+	if (!lire_faccents())
+	{cree_faccents();}
+	#endif
 	
 	//Initialisation de ncurses:
 	setlocale(LC_ALL, "en_CA.UTF-8"); //permet l'affichage des accents!
@@ -717,6 +726,8 @@ int main(int argc, char* argv[])
 		init_pair(7, 190, COLOR_BLACK);
 		init_pair(8, COLOR_WHITE, COLOR_RED);
 		init_pair(10, COLOR_BLACK, COLOR_WHITE);
+		init_pair(11, COLOR_WHITE, COLOR_BLACK);
+		init_pair(12, COLOR_RED, COLOR_WHITE);
 	}
 	else
 	{printf("Ce terminal ne supporte pas l'affichage en couleur.\nVeuillez réessayer avec un autre terminal.\n\n"); quitter(1);}
@@ -906,11 +917,11 @@ int main(int argc, char* argv[])
 			mv(y, x);
 			break;
 		
-		case KEY_SHOME: //Shift-Home = aller au début du paragraphe
+		case KEY_SHOME: //Shift-Home = sélectionner le début de la ligne
 			//...
 			break;
 		
-		case KEY_SEND: //Shift-End = aller à la fin du paragraphe
+		case KEY_SEND: //Shift-End = sélectionner le reste de la ligne
 			//...
 			break;
 		
@@ -1043,6 +1054,21 @@ int main(int argc, char* argv[])
 					else
 					{coloration_syntaxique = 0; rafraichir(); print_msg("Coloration syntaxique désactivée.");}
 					break;
+				
+				case '2': //F2 = Paramètres avancés
+					curs_set(0);
+					param_avances();
+					curs_set(1);
+					break;
+				
+				#ifdef _ACCENTS_H
+				case '3': //F3 = Gestion des accents
+					buffint = gestion_accents();
+					rafraichir();
+					if (!buffint)
+					{erreur(0, "...");}
+					break;
+				#endif
 				}
 			}
 			

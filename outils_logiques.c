@@ -1,65 +1,40 @@
 #include "outils_graphiques.c"
 
 
-int longueur_str(char str[])
-//Renvoie la longueur (nombre de caractères) d'une string.
-//Cette fonction agit comme strlen(str), sauf qu'elle tient compte des accents (multicharacter constants).
-//Renvoie -1 en cas d'erreur.
+bool est_un_nbre(char str[], char type)
+//Renvoie TRUE si str contient exclusivement un nombre (on peut ensuite utiliser sscanf pour l'extraire).
+//Renvoie FALSE dans le cas contraire.
+//Le paramètre type permet de préciser quel type de nombres sont acceptés:
+//b = bool (0 ou 1), u (ou I) = unsigned (entier positif), i = int (entier), F = float positif (nombre décimal positif), f (ou autre) = float (nombre décimal)
 {
-	int nbre_car = 1; //nombre de caractères que contient la string
-	char multicar[3] = "  "; //string utilisée pour trouver les accents (multicharacter constants)
+	bool negatif = FALSE;
+	bool decimal = FALSE;
 	
-	if (str == NULL)
-	{return -1;}
-	
-	if (!strcmp(str, ""))
-	{return 0;} //renvoie 0 si str est vide
-	
-	//Calcul de la longueur de la string:
-	for (int compteur = 1; str[compteur] != '\000'; compteur++)
+	if (type == 'b')
 	{
-		multicar[0] = str[compteur - 1];
-		multicar[1] = str[compteur];
-		if (!strcmp(multicar, "é") || !strcmp(multicar, "è") || !strcmp(multicar, "ê") || !strcmp(multicar, "ë") || !strcmp(multicar, "à") || !strcmp(multicar, "â") || !strcmp(multicar, "ä") || !strcmp(multicar, "î") \
-			|| !strcmp(multicar, "ï") || !strcmp(multicar, "ô") || !strcmp(multicar, "ö") || !strcmp(multicar, "ù") || !strcmp(multicar, "û") || !strcmp(multicar, "ç") || !strcmp(multicar, "É") || !strcmp(multicar, "È") \
-			|| !strcmp(multicar, "Ê") || !strcmp(multicar, "Ë") || !strcmp(multicar, "À") || !strcmp(multicar, "Â") || !strcmp(multicar, "Ä") || !strcmp(multicar, "Î") || !strcmp(multicar, "Ï") || !strcmp(multicar, "Ô") \
-			|| !strcmp(multicar, "Ö") || !strcmp(multicar, "Ù") || !strcmp(multicar, "Û") || !strcmp(multicar, "Ç"))
-		{nbre_car--;}
-		nbre_car++;
+		if ((str[0] == '0' || str[0] == '1') && str[1] == '\000')
+		{return TRUE;}
+		else
+		{return FALSE;}
 	}
 	
-	return nbre_car;
-}
-
-
-char* insere_car(char str[], int car, unsigned pos, unsigned taille_max)
-//Insère le caractère car dans la string str (de taille maximale taille_max), à la position pos.
-//Renvoie la nouvelle string en cas de succès (la string est aussi modifiée directement par adresse).
-//Renvoie NULL (et ne fait rien) en cas d'erreur (surtout quand il n'y a pas de place dans str pour insérer car).
-{
-	char lettre_inseree[3];
-	unsigned compteur;
-	
-	if (str == NULL || pos >= taille_max || strlen(str) + 1 >= taille_max || !match_accent(car, lettre_inseree))
-	{return NULL;}
-	
-	char buffer = str[pos];
-	char buffer2;
-	int ncar = 1; //nbre de caractères de décalage (1 pour un caractère normal, 2 pour un accent)
-	
-	str[pos] = lettre_inseree[0];
-	if (lettre_inseree[0] != car)
-	{str[pos + 1] = lettre_inseree[1]; ncar = 2;}
-	for (compteur = pos + ncar; compteur <= strlen(str); compteur++)
+	for (int compteur = 0; str[compteur] != '\000'; compteur++)
 	{
-		buffer2 = str[compteur];
-		str[compteur] = buffer;
-		buffer = buffer2;
+		if (!isdigit(str[compteur]))
+		{
+			if (str[compteur] == '-' && (type == 'u' || type == 'I' || type == 'F' || negatif))
+			{return FALSE;}
+			else
+			{negatif = TRUE;}
+			
+			if ((str[compteur] == '.' || str[compteur] == ',') && (type == 'u' || type == 'I' || type == 'i' || decimal))
+			{return FALSE;}
+			else
+			{decimal = TRUE;}
+		}
 	}
-	str[compteur + 1] = buffer;
-	str[compteur + 2] = '\000';
 	
-	return str;
+	return TRUE;
 }
 
 
@@ -68,10 +43,27 @@ bool est_un_accent(int car)
 //Indique si le caractère reçu en paramètre est un accent (défini dans liste_accents).
 //Cette fonction est seulement utile avec un input ncurses!
 //Elle ne détectera pas les accents dans un string.
+//Cette fonction est remplacée par un macro hardcodé si accents.h n'est pas inclus.
 {
 	for (int compteur = 0; compteur < 20; compteur++)
 	{
 		if (liste_accents[compteur].valeur_min == car || liste_accents[compteur].valeur_maj == car)
+		{return TRUE;}
+	}
+	
+	return FALSE;
+}
+
+
+bool str_est_un_accent(char multicar[])
+//Indique si la string reçue en paramètre est un des caractères accentués de liste_accents.
+//Cette fonction n'est d'aucune utilité avec un input ncurses.
+//Elle ne doit servir qu'à identifié un accent (préalablement isolé dans une string de longueur 3) dans une string.
+//Cette fonction est remplacée par un macro hardcodé si accents.h n'est pas inclus.
+{
+	for (int compteur = 0; compteur < 20; compteur++)
+	{
+		if (!strcmp(liste_accents[compteur].minuscule, multicar) || !strcmp(liste_accents[compteur].majuscule, multicar))
 		{return TRUE;}
 	}
 	
@@ -115,6 +107,34 @@ bool match_accent(int car, char accent[])
 }
 
 
+int longueur_str(char str[])
+//Renvoie la longueur (nombre de caractères) d'une string.
+//Cette fonction agit comme strlen(str), sauf qu'elle tient compte des accents (multicharacter constants).
+//Renvoie -1 en cas d'erreur.
+{
+	int nbre_car = 1; //nombre de caractères que contient la string
+	char multicar[3] = "  "; //string utilisée pour trouver les accents (multicharacter constants)
+	
+	if (str == NULL)
+	{return -1;}
+	
+	if (!strcmp(str, ""))
+	{return 0;} //renvoie 0 si str est vide
+	
+	//Calcul de la longueur de la string:
+	for (int compteur = 1; str[compteur] != '\000'; compteur++)
+	{
+		multicar[0] = str[compteur - 1];
+		multicar[1] = str[compteur];
+		if (str_est_un_accent(multicar))
+		{nbre_car--;}
+		nbre_car++;
+	}
+	
+	return nbre_car;
+}
+
+
 int relativise_pos(char str[], int pos)
 //Trouve la véritable position du curseur dans une string en compensant pour les accents.
 //Reçoit la string en question et la position supposée (position à l'écran) en paramètres.
@@ -135,14 +155,52 @@ int relativise_pos(char str[], int pos)
 	{
 		multicar[0] = str[compteur - 1];
 		multicar[1] = str[compteur];
-		if (!strcmp(multicar, "é") || !strcmp(multicar, "è") || !strcmp(multicar, "ê") || !strcmp(multicar, "ë") || !strcmp(multicar, "à") || !strcmp(multicar, "â") || !strcmp(multicar, "ä") || !strcmp(multicar, "î") \
-			|| !strcmp(multicar, "ï") || !strcmp(multicar, "ô") || !strcmp(multicar, "ö") || !strcmp(multicar, "ù") || !strcmp(multicar, "û") || !strcmp(multicar, "ç") || !strcmp(multicar, "É") || !strcmp(multicar, "È") \
-			|| !strcmp(multicar, "Ê") || !strcmp(multicar, "Ë") || !strcmp(multicar, "À") || !strcmp(multicar, "Â") || !strcmp(multicar, "Ä") || !strcmp(multicar, "Î") || !strcmp(multicar, "Ï") || !strcmp(multicar, "Ô") \
-			|| !strcmp(multicar, "Ö") || !strcmp(multicar, "Ù") || !strcmp(multicar, "Û") || !strcmp(multicar, "Ç"))
+		if (str_est_un_accent(multicar))
 		{nbre_accents++;}
 	}
 	
 	return pos + nbre_accents;
+}
+
+
+char* insere_car(char str[], int car, unsigned pos, unsigned taille_max)
+//Insère le caractère car dans la string str (de taille maximale taille_max), à la position pos.
+//Renvoie la nouvelle string en cas de succès (la string est aussi modifiée directement par adresse).
+//Renvoie NULL (et ne fait rien) en cas d'erreur (surtout quand il n'y a pas de place dans str pour insérer car).
+{
+	char lettre_inseree[3];
+	
+	if (str == NULL || pos >= taille_max || strlen(str) + 1 >= taille_max || !match_accent(car, lettre_inseree))
+	{return NULL;}
+	
+	char buffer_pos = str[pos]; //contient le prochain caractère à remettre dans la string
+	char buffer_suivante = '\000'; //contient le dernier caractère présentement en file pour être remis dans la string (soit le 2e si ncar == 1 et le 3e si ncar == 2)
+	char buffer_decalage = '\000'; //contient le 2e caractère présentement en file pour être remis dans la string si ncar == 2 (n'est pas utilisé si ncar == 1)
+	int ncar = 1; //nbre de caractères de décalage (1 pour un caractère normal, 2 pour un accent)
+	unsigned compteur;
+	
+	str[pos] = lettre_inseree[0];
+	#ifdef _ACCENTS_H
+	if (est_un_accent(car))
+	{
+		buffer_decalage = str[pos + 1];
+		str[pos + 1] = lettre_inseree[1];
+		ncar = 2;
+	}
+	#endif
+	for (compteur = pos + ncar; compteur < strlen(str) + ncar; compteur++)
+	{
+		buffer_suivante = str[compteur];
+		str[compteur] = buffer_pos;
+		if (ncar == 1)	
+		{buffer_pos = buffer_suivante;}
+		else
+		{buffer_pos = buffer_decalage; buffer_decalage = buffer_suivante;}
+	}
+	str[compteur + 1] = buffer_pos;
+	str[compteur + 2] = '\000';
+	
+	return str;
 }
 
 

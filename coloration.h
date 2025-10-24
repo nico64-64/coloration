@@ -7,20 +7,19 @@
 #include <locale.h>
 #include <time.h>
 
-//Gestion avancée/complète des accents:
-#include "accents.h"
-
 
 #ifndef _COLORATION_H
 #define _COLORATION_H
 
 
 //Version du programme:
-#define VERSION "0.3.4"
-
+#define VERSION "0.5.0"
 
 //Valeurs Macros:
 #define NBRE_CAR_MAX_PAR_LIGNE 499
+
+//Gestion avancée/complète des accents:
+#include "accents.h"
 
 
 //Structs et enums:
@@ -114,7 +113,7 @@ struct commande
 	char nom[30];
 	char touche[10];
 	char descr[200];
-	char details[1300];
+	char details[1800];
 	int cmd_liees[3];
 };
 
@@ -166,8 +165,8 @@ commande cmds[] =
 		"Redessine l'écran de Coloration sur le terminal, permettant parfois de régler quelques petits glitchs.\nAffiche aussi tout message d'erreur en attente dans la barre d'état.", {24, 0, 0}},
 	{24, "Débogage", "^D", "Activer ou désactiver le mode débogage.", "Appuyer sur Ctrl-D pour activer/désactiver le mode débogage.\nVous pouvez aussi changer de mode de débogage en appuyant sur M-# (Alt-Car 3). Il y a 4 modes de débogage: \"input\" (affiche le nom de la touche appuyée), \"position\" (affiche la position du curseur dans le fichier), \"tag/type\" (affiche le tag et le type (s'il y a lieu) de la ligne où se trouve le curseur) et \"input (raw)\" (donne la valeur numérique de la touche appuyée).\nCette fonctionnalité est une des seules à ne pas avoir de commande correspondante. Ctrl-D est la seule manière de l'activer.", {23, 25, 26}},
 	{25, "Col. syntaxique", "F1", "Activer ou désactiver la coloration syntaxique.", "Active/Désactive la coloration syntaxique.\nCette coloration suit la syntaxe d'un fichier de liste d'objets source du projet \"text-adventure game\" (voir \"Compiler la liste\").\nAssurez-vous d'appuyer sur Fn en même temps que F1 pour que cela fonctionne.\nLa coloration syntaxique suivant la syntaxe attendue, elle n'apparaitra pas si le fichier n'est pas syntaxiquement conforme (voir \"Aller au -DÉBUT-\" et \"Aller à la -FIN-\").", {13, 21, 22}},
-	{26, "Paramètres avancés", "", "Modifier certains paramètres avancés.", "Accessible par le menu des options uniquement, les paramètres avancés comprennent quelques options de débogage ainsi que quelque variables internes modifiables par l'utilisateur.\nLa modification de ces paramètres n'est pas recommandée.", {2, 1, 27}},
-	{27, "Support des accents", "", "Informations sur la gestion des accents par Coloration.", "Plusieurs terminaux ne supportent pas nativement l'utilisation des accents.\nPour contourner ce problème, Coloration implante son propre système de gestion des accents directement relié à la valeur numérique reçue du clavier.\n \nColoration est normalement compilé en incluant un fichier nommé \"accents.h\", lequel est essentiel au support complet des caractères accentués.Si ce fichier n'a pas été inclus à la compilation, seul un support limité sera disponible, c'est-à-dire que les accents déjà présents dans un fichier (ou ceux présent dans l'interface) seront très bien lus, mais que vous ne pourrez pas en ajouter des nouveaux (tout accent reçu du clavier sera soit ignoré ou bien transformé en \"?\").\n \nLes système de gestion des accents est également limité aux accents fréquemment utilisé dans la langue française (soit les caractères suivants, en majuscules en en misucules: àâä éèêë îï ôö ùû ç). Toutefois, si le support complet des accents est disponible dans votre version, vous pourrez aussi définir manuellement jusqu'à 6 \"accents\" supplémentaires.\nSi le support complet est activé, vous pouvez aussi changer la valeur numérique des accents dans les paramètres avancés de l'éditeur pour que l'éditeur s'adapte à votre clavier.", {26, 1, 0}}
+	{26, "Paramètres avancés", "F2", "Modifier certains paramètres avancés.", "Également accessible par le menu des options, les paramètres avancés permettent de modifier le comportement de l'éditeur dans certaines situations.\nLa modification de ces paramètres n'est pas recommandée.", {2, 1, 27}},
+	{27, "Gestion des accents", "F3", "Informations sur le support et la gestion des accents par Coloration.", "Coloration fournit, selon sa version, un support \"minimal\" ou \"complet\" des accents.\nSi seul le support minimal est activé, la plupart des accents déjà présents dans un fichier seront affichés correctement, mais vous ne pourrez pas en en entrer au clavier (tout accent reçu du clavier sera ignoré ou transformé en \"?\").\nVous pouvez vérifier si le support complet est activé en ouvrant les paramètres avancés du programme. Si le support complet est activé, vous pouvez aussi y modifier la gestion des accents en entrant ^G.\n \nPar défaut, seuls les caractères suivants (en majuscule en en minuscule) sont supportés par le programme: àâä éèêë îï ôö ùû ç.\nToutefois, si le support complet des accents est activé, vous pouvez aussi définir manuellement jusqu'à 6 \"accents\" supplémentaires.\nDans ce cas, vous pouvez aussi changer les valeurs numériques associées aux différents caractères dans les paramètres avancés pour que l'éditeur s'adapte à votre clavier.\n \nExplication technique:\nLorsque vous appuyez sur une touche de votre clavier, ncurses envoie une certaine valeur numérique au programme. Cette valeur peut être très grande (comme pour les accents), ce qui nécessite plus qu'un octet. Dans ce cas-ci, le système de gestion des accents ignore le 1er octet, puisque celui-ci est normalement toujours 195 pour tous les caractères communs de la langue française. Cette manière de faire est toutefois très imparfaite, puisqu'elle prend aussi pour acquis que le 2e octet ne sera pas identique à aucune autre valeur numérique possiblement reçue du clavier. C'est normalement le cas, mais si la gestion des accents ne fonctionne pas sur votre machine, c'est certainement à cause de cela.", {26, 1, 0}}
 };
 const int nbre_cmds = 27;
 
@@ -180,12 +179,19 @@ char nom_fconfig[50] = "config.txt"; //nom du fichier de configuration de l'édi
 p_avance p_avances[] =
 {
 	{"-", "", '0', NULL, NULL}, //Ce faux paramètre avancé doit toujours rester vide. Il sert uniquement à décaler la liste pour qu'elle commence à 1.
+	{"CMD_COMPILER", "Commande envoyée pour \"compiler la liste\" (voir manuel d'aide).", 's', NULL, &cmd_compiler_liste[0]},
+	#ifdef _ACCENTS_H
+	{"FACCENTS", "Nom et emplacement du fichier de sauvegarde des accents.", 's', NULL, &nom_faccents[0]},
+	#endif
 	{"ERRLOG", "Logguer les erreurs dans un fichier txt.", 'b', (int*) &err_log, NULL},
 	{"FERREUR", "Nom et emplacement du fichier de log des erreurs (si activé).", 's', NULL, &nom_ferreur[0]},
-	{"CMD_COMPILER", "Commande envoyée pour \"compiler la liste\" (voir manuel d'aide).", 's', NULL, &cmd_compiler_liste[0]},
 	{"-", "Nom et emplacement du fichier de configuration de l'éditeur.", 's', NULL, &nom_fconfig[0]},
 };
+#ifdef _ACCENTS_H
+const int nbre_p_avances = 5;
+#else
 const int nbre_p_avances = 4;
+#endif
 
 //Symboles internes:
 void* ERREUR; //pointeur signifiant que la fonction le retournant a eu une erreur
@@ -215,6 +221,7 @@ bool coloration_syntaxique = TRUE; //indique si la coloration syntaxique est act
 char compilateur_liste[205]; //commande réellement utilisée pour compiler la liste d'objets de ce fichier (= cmd_compiler_liste + ' ' + nom_fichier)
 bool fconfig_particulier = FALSE; //indique si l'utilisateur a spécifié un fconfig en option d'invocation
 bool barre_dispo = TRUE; //indique si un message est présentement affiché dans la barre d'état (0 = occupée, 1 = libre) (très peu utilisé...)
+char msg_en_attente[300] = ""; //indique si un message devrait être réaffiché parce qu'il n'a pas fonctionné
 
 
 //Fonctions Macros:
@@ -229,8 +236,15 @@ bool barre_dispo = TRUE; //indique si un message est présentement affiché dans
 
 //Gestion de base des accents si accents.h n'est pas inclus:
 #ifndef _ACCENTS_H
-#define est_un_accent(car)	(car == 169 || car == 137 || car == 168 || car == 136 || car == 170 || car == 138 || car ==	171 || car == 139 || car ==	160 || car == 128 || car ==	162 || car == 130 || car ==	164 || car == 132 \
-							|| car ==	174 || car == 142 || car ==	175 || car == 143 || car ==	180 || car == 148 || car ==	182 || car == 150 || car ==	185 || car == 153 || car ==	187 || car == 155 || car ==	167 || car == 135)
+//Indique si un caractère d'input ncurses (int) est un des 28 caractères accentués supportés en version minimaliste:
+#define est_un_accent(car)		(car == 169 || car == 137 || car == 168 || car == 136 || car == 170 || car == 138 || car ==	171 || car == 139 || car ==	160 || car == 128 || car ==	162 || car == 130 || car ==	164 || car == 132 \
+									|| car ==	174 || car == 142 || car ==	175 || car == 143 || car ==	180 || car == 148 || car ==	182 || car == 150 || car ==	185 || car == 153 || car ==	187 || car == 155 || car ==	167 || car == 135)
+//Indique si une string est un de ces 28 caractères:
+#define str_est_un_accent(car)	(!strcmp(car, "é") || !strcmp(car, "è") || !strcmp(car, "ê") || !strcmp(car, "ë") || !strcmp(car, "à") || !strcmp(car, "â") || !strcmp(car, "ä") || !strcmp(car, "î") || !strcmp(car, "ï") \
+									|| !strcmp(car, "ô") || !strcmp(car, "ö") || !strcmp(car, "ù") || !strcmp(car, "û") || !strcmp(car, "ç") || !strcmp(car, "É") || !strcmp(car, "È") || !strcmp(car, "Ê") || !strcmp(car, "Ë") \
+									|| !strcmp(car, "À") || !strcmp(car, "Â") || !strcmp(car, "Ä") || !strcmp(car, "Î") || !strcmp(car, "Ï") || !strcmp(car, "Ô") || !strcmp(car, "Ö") || !strcmp(car, "Ù") || !strcmp(car, "Û") \
+									|| !strcmp(car, "Ç"))
+//Ces 2 macros sont remplacés par des fonctions si accents.h est inclus.
 #endif
 
 //Gestion des erreurs et débogage:
@@ -242,6 +256,7 @@ bool barre_dispo = TRUE; //indique si un message est présentement affiché dans
 
 //Fonctions:
 //Se référer au fichier .c où est implémentée la fonction pour plus de détails.
+//Les fonctions spécifiques au support complet des accents sont listées dans accents.h.
 
 //coloration.c:
 ligne* aller_a (int num); //envoie l'utilisateur à une certaine ligne du fichier (reçue en paramètre ou demandée par la fonction si num = 0)
@@ -257,16 +272,15 @@ void term (); //permet à l'utilisateur d'envoyer une commande au terminal (et d
 //options.c:
 void aide (int num_cmd); //ouvre le module d'aide / manuel et gère (et affiche) l'aide interactive générale
 void aide_specifique (int num_cmd); //affiche l'article du manuel à propos de la commande dont elle vient de recevoir le numéro
-bool enregistrer_parametres (); //enregistre les paramètres avancés dans fconfig
 void credits (); //affiche et gère la fenêtre des crédits
+bool enregistrer_parametres (); //enregistre les paramètres avancés dans fconfig
+void lire_parametres(); //lit et applique les paramètres enregistrés dans fconfig
 void menu_options (); //affiche le menu des options (et gère son utilisation)
 void param_avances (); //affiche et gère la fenêtre des paramètres avancés
 
 //outils_logiques.c:
 int compter_lignes(ligne* ln); //compte le nombre de lignes (à l'écran) qu'occupe une ligne du fichier
-#ifdef _ACCENTS_H 
-bool est_un_accent(int car); //indique si le caractère reçu est un accent ou pas
-#endif
+bool est_un_nbre(char str[], char type); //indique si une string est un nombre (choisir le type de nombre via le paramètre correspondant)
 ligne* init_ligne (int num); //initialise la structure d'une ligne en la lisant dans le fichier ouvert
 int longueur_str (char str[]); //trouve le nombre de caractères d'une string en tenant compte des accents
 bool match_accent (int car, char accent[]); //convertit un accent reçu du clavier (int) en ce même caractère en format string

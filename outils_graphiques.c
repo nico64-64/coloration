@@ -2,7 +2,7 @@
 
 
 void print_msg(char msg[])
-//Affiche un message dans la barre d'état.
+//Affiche un message de moins de 300 caractères dans la barre d'état.
 //Efface tout message de la barre d'état si msg est NULL.
 {
 	char message[300];
