@@ -279,14 +279,18 @@ void menu_options (); //affiche le menu des options (et gère son utilisation)
 void param_avances (); //affiche et gère la fenêtre des paramètres avancés
 
 //outils_logiques.c:
-int compter_lignes(ligne* ln); //compte le nombre de lignes (à l'écran) qu'occupe une ligne du fichier
-bool est_un_nbre(char str[], char type); //indique si une string est un nombre (choisir le type de nombre via le paramètre correspondant)
+int compter_lignes (ligne* ln); //compte le nombre de lignes (à l'écran) qu'occupe une ligne du fichier
+char* efface_car (char str[], unsigned pos); //efface le caractère situé à la position pos dans la string str
+bool est_un_nbre (char str[], char type); //indique si une string est un nombre (choisir le type de nombre via le paramètre correspondant)
 ligne* init_ligne (int num); //initialise la structure d'une ligne en la lisant dans le fichier ouvert
+ligne* insere_ligne (ligne* ln_i, unsigned pos); //insère une nouvelle ligne après la ligne reçue en paramètre, juste avant la position également reçue en paramètre
 int longueur_str (char str[]); //trouve le nombre de caractères d'une string en tenant compte des accents
 bool match_accent (int car, char accent[]); //convertit un accent reçu du clavier (int) en ce même caractère en format string
 int relativise_pos (char str[], int pos); //trouve la position réelle du curseur dans une string contenant des accents
+bool supprime_ligne (ligne* ln); //supprime une ligne et append son contenu à la ligne précédente.
 ligne* trouve_ligne (int num); //renvoie un pointeur vers la ligne correspondant au numéro de ligne reçu
 ligne* trouve_tag (_tag tag, ligne* depart); //renvoie la première ligne ayant un certain tag d'assigné depuis la ligne de départ (ou le début du fichier si depart est NULL)
+void verifie_syntaxe (); //vérifie la syntaxe du document (pour la coloration syntaxique)
 
 //outils_graphiques.c:
 int afficher_ligne(ligne* ln); //affiche une ligne du fichier à l'écran

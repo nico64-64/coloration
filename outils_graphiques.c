@@ -221,7 +221,7 @@ void liste_options(int selection)
 
 int afficher_ligne(ligne* ln)
 //Affiche une ligne à l'écran (et son numéro de ligne à gauche).
-//Cette ligne (reçue en paramètre) doit avoir été déjà initialisée.
+//Cette ligne (reçue en paramètre) doit déjà avoir été initialisée.
 //Renvoie le numéro de la ligne ou 0 si la ligne ne peut pas être affichée.
 //Renvoie -1 si la ligne ne s'est pas affichée au complet.
 {
@@ -352,6 +352,11 @@ int afficher_ligne(ligne* ln)
 	//Ligne trop longue:
 	if (longueur_str(ln->txt) > NBRE_CAR_MAX_PAR_LIGNE)
 	{addch(' '); attrset(COLOR_PAIR(8) | A_BOLD); printw("..."); standend();}
+	
+	//Écrit un caractère vide de plus (pour compenser lorsqu'on efface):
+	getyx(stdscr, y, x);
+	if (x <= COLS - 2)
+	{addch(' ');}
 	
 	//Fin de la ligne (nouvelle ligne):
 	refresh();

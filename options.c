@@ -794,13 +794,13 @@ void lire_parametres()
 					if (buffint == 1 || buffint == 0)
 					{*(bool*) p_avances[compteur].ptr_int = (bool) buffint;}
 					else
-					{erreur(23, "Ligne invalide dans le fichier de configurration (faux paramètre booléen)");}
+					{erreur(23, "Ligne invalide dans le fichier de configuration (faux paramètre booléen)");}
 					break;
 				
 				case 'i': //int
 					sscanf(mot, "%d", &buffint);
 					if (buffint == -1)
-					{erreur(24, "Ligne invalide dans le fichier de configurration (faux paramètre numérique)");}
+					{erreur(24, "Ligne invalide dans le fichier de configuration (faux paramètre numérique)");}
 					else
 					{*p_avances[compteur].ptr_int = buffint;}
 					break;

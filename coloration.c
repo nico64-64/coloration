@@ -674,6 +674,7 @@ int main(int argc, char* argv[])
 	char buffer[20] = "";
 	int buffint;
 	int buffint2;
+	ligne* buffln = NULL;
 	
 	
 	//Arguments:
@@ -827,7 +828,7 @@ int main(int argc, char* argv[])
 				else
 				{y--;}
 				
-				if (x - 3 > longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5))
+				if (x - 3 > longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5) && pos_y == ln_mod->multiligne)
 				{mv(y, 4 + longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5));}
 				else
 				{mv(y, x);}
@@ -926,11 +927,97 @@ int main(int argc, char* argv[])
 			break;
 		
 		case KEY_BACKSPACE: //Backspace = Effacer vers l'arrière
-			//...
+			if (x == 4 && pos_y == 1) //effacer un newline
+			{
+				if (y == 1)
+				{
+					if (ln_mod->precedent == &DEBUT_FICHIER)
+					{print_msg("Vous avez atteint le début du fichier."); break;}
+					else
+					{
+						premiere_ligne--;
+						y += ln_mod->precedent->multiligne;
+					}
+				}
+				ln_mod = ln_mod->precedent;
+				buffint = ln_mod->multiligne;
+				buffint2 = longueur_str(ln_mod->txt) - (COLS - 5) * (ln_mod->multiligne - 1);
+				
+				if (!supprime_ligne(ln_mod->suivant)) //suppression ratée (erreur)
+				{ln_mod = ln_mod->suivant;}
+				else //suppression réussie
+				{
+					verifie_syntaxe();
+					rafraichir();
+					mv(y-1, 4 + buffint2);
+					pos_y = buffint;
+				}
+				
+				erreur(0, "..."); //Ça peut toujours être utile, et encore plus dans ici... (voir supprime_ligne pour comprendre...)
+			}
+			else //effacer du texte
+			{
+				buffint = x;
+				buffint2 = ln_mod->multiligne;
+				
+				//Effaçage, vérification de la syntaxe et gestion d'erreur:
+				if (efface_car(ln_mod->txt, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)) - 1) == ERREUR)
+				{erreur(0, "...");}
+				verifie_syntaxe();
+				
+				//On redessine d'abord seulement cette ligne:
+				mv(y - pos_y + 1, 4);
+				afficher_ligne(ln_mod);
+				mv(y + pos_y - 1, 4);
+				
+				//Multiligne a changé: il faut tout redessiner:
+				if (ln_mod->multiligne != buffint2)
+				{rafraichir();}
+				
+				//On a changé de ligne:
+				if (buffint == 4)
+				{mv(y - ln_mod->multiligne - 1, COLS - 2); pos_y--;}
+				
+				//On est encore sur la même ligne:
+				else
+				{mv(y - ln_mod->multiligne, buffint - 1);}
+			}
 			break;
 		
 		case KEY_DC: //Delete = Effacer vers l'avant
-			//...
+			if (pos_y == ln_mod->multiligne && x == longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5) + 4) //effacer un newline
+			{
+				if (ln_mod->suivant == &FIN_FICHIER)
+				{print_msg("Vous avez atteint la fin du fichier.");}
+				else
+				{
+					if (supprime_ligne(ln_mod->suivant))
+					{verifie_syntaxe(); rafraichir();}
+					erreur(0, "..."); //Ça peut toujours être utile, et encore plus dans ici... (voir supprime_ligne pour comprendre...)
+				}
+			}
+			else //effacer du texte
+			{
+				buffint = x;
+				buffint2 = ln_mod->multiligne;
+				
+				//Effaçage, erreurs et revérification de la syntaxe:
+				if (efface_car(ln_mod->txt, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5))) == ERREUR)
+				{erreur(0, "...");}
+				verifie_syntaxe();
+				
+				//On redessine d'abord seulement cette ligne:
+				mv(y - pos_y + 1, 4);
+				afficher_ligne(ln_mod);
+				mv(y + pos_y - 1, 4);
+				
+				//Multiligne a changé: il faut tout redessiner:
+				if (ln_mod->multiligne != buffint2)
+				{rafraichir();}
+				
+				//On replace le curseur:
+				mv(y - ln_mod->multiligne, buffint);
+			}
 			break;
 		
 		default:
@@ -943,8 +1030,9 @@ int main(int argc, char* argv[])
 				buffint = x; //L'affichage de la ligne modifiée nous fera perdre notre position, donc on doit la conserver quelque part...
 				mv(y - pos_y + 1, x); //Pour que la ligne s'affiche au bon endroit, le curseur doit être dans la première ligne de la ligne... (le +1 vient du fait que multiligne commence à 1)
 				buffint2 = ln_mod->multiligne; //Cette valeur sera peut-être modifiée par notre ajout, et si c'est le cas, il va falloir redessiner l'écran au complet, alors on doit garder une copie de cette valeur...
-				if (!insere_car(ln_mod->txt, input, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)), sizeof(ln_mod->txt))) //Insertion du caractère dans la ligne! (relativise_pos compense pour les accents)
+				if (insere_car(ln_mod->txt, input, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)), sizeof(ln_mod->txt)) == ERREUR) //Insertion du caractère dans la ligne! (relativise_pos compense pour les accents)
 				{erreur(40, "Ce caractère a été détecté comme étant imprimable, mais ne l'est pas. Quoi?!"); erreur(0, "..."); break;} //Ne devrait jamais arriver (sauf si je me plante comme il faut dans mon code), mais bon...
+				verifie_syntaxe(); //Vérification de la syntaxe de cette ligne (ainsi que de toutes les autres...)
 				
 				//Affichage et Positionnement:
 				afficher_ligne(ln_mod); //affichage de la ligne modifiée (et recalcul de son nombre de lignes (multiligne))
@@ -975,6 +1063,7 @@ int main(int argc, char* argv[])
 					break;
 				
 				case 'R': //Ctrl-R = Rafraichir
+					verifie_syntaxe();
 					rafraichir();
 					erreur(0, "..."); //Profitons-en pour afficher les erreurs qui traineraient dans le buffer...
 					break;
@@ -1019,7 +1108,20 @@ int main(int argc, char* argv[])
 					break;
 				
 				case 'M': //Ctrl-M = Enter
-					//...
+					buffln = insere_ligne(ln_mod, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5))); //insertion "logique" de la ligne au bon endroit
+					if (buffln == NULL)
+					{erreur(50, "Erreur lors de l'insertion de la nouvelle ligne!"); erreur(0, "...");}
+					else
+					{
+						verifie_syntaxe();
+						ln_mod = buffln; //mise à jour (logique) de la ligne à modifier
+						if (y == LINES - 4) //dernière ligne à l'écran: on scroll d'une ligne (pas besoin de gérer le multiligne!)
+						{premiere_ligne++; mv(y, 4);}
+						else //Sinon, on fait juste descendre d'une ligne (+1) PLUS le nombre de "sous-lignes" de la ligne où on était MOINS la position où on était dans ce fatras de multiligne...
+						{mv(y + ln_mod->precedent->multiligne - pos_y + 1, 4);}
+						rafraichir(); //il faut redessiner l'écran pour voir notre nouvelle ligne
+						pos_y = 1; //"réinitialisation" du multiligne
+					}
 					break;
 				}
 			}
