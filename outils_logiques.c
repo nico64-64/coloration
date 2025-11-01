@@ -378,7 +378,7 @@ bool supprime_ligne(ligne* ln)
 
 void verifie_syntaxe()
 //Vérifie si la syntaxe du fichier (au complet) correspond à celle d'une liste d'objets et assigne un tag et/ou un type à chaque ligne.
-//Est appelé à l'ouverture du fichier et à la moindre modification de celui-ci.
+//Est appelé à la lecture du fichier (donc à l'initialisation du programme) et à la moindre modification de celui-ci.
 {
 	bool override = 0;
 	unsigned compteur = 0;
@@ -386,6 +386,7 @@ void verifie_syntaxe()
 	int fin_commentaire = -1; //indique si un commentaire est terminé (et à quelle position dans le texte il se termine) (vaut 0 si le commentaire dure sur plusieurs lignes)
 	int fin_txt_ignore = -1; //même chose, mais pour le texte ignoré (entre *)
 	ligne* ln = DEBUT_FICHIER.suivant;
+	
 	
 	while (ln != &FIN_FICHIER)
 	{
@@ -518,7 +519,7 @@ void verifie_syntaxe()
 
 
 ligne* init_ligne(int num)
-//Initialise la structure d'une ligne (en la lisant dans le fichier) lorsque le numéro est positif.
+//Initialise la structure d'une ligne (en la lisant dans le fichier) lorsque le numéro est positif (ne pas oublier d'ensuite vérifier la synatxe du fichier).
 //Libère la structure d'une ligne si le numéro est négatif.
 //Renvoie la dernière ligne du fichier si le numéro est 0.
 //Renvoie la nouvelle ligne initialisée si le numéro est positif.
@@ -528,13 +529,9 @@ ligne* init_ligne(int num)
 	static int num_ligne_max = 0; //nbre de lignes lues du fichier jusqu'à date
 	static fpos_t pos_max;
 	static ligne* anc_ligne = NULL; //ancienne ligne (dernière crée)
-	static bool txt_a_ignorer = 1; //indique si on se trouve entre (0) ou avant/après (1) le -DÉBUT- et la -FIN- dans le fichier
-	static int fin_commentaire = -1; //indique si un commentaire est terminé (et à quelle position dans le texte il se termine) (vaut 0 si le commentaire dure sur plusieurs lignes)
-	static int fin_txt_ignore = -1; //même chose, mais pour le texte ignoré (entre *)
 	ligne* nouv_ligne; //nouvelle ligne (présentement utilisé)
 	char car_lu = EOF;
 	unsigned compteur = 0;
-	bool override = 0;
 	
 	if (num == 0)
 	{return FIN_FICHIER.precedent;}
@@ -585,129 +582,6 @@ ligne* init_ligne(int num)
 		fgetpos(fichier, &pos_max);
 		num_ligne_max++;
 		anc_ligne = nouv_ligne;
-		
-		//Mise en place des étiquettes:
-		nouv_ligne->tag = 0; //ne devrait jamais être le cas, sauf pour les lignes vides
-		if (!strcmp(nouv_ligne->txt, "-DÉBUT-") && txt_a_ignorer)
-		{txt_a_ignorer = 0; nouv_ligne->tag = DEBUT;}
-		else if (txt_a_ignorer && strcmp(nouv_ligne->txt, "") != 0)
-		{nouv_ligne->tag = IGNORE;}
-		else
-		{
-			if (!strcmp(nouv_ligne->txt, "-FIN-"))
-			{txt_a_ignorer = 1; nouv_ligne->tag = FIN;}
-			else if (!strcmp(nouv_ligne->txt, "Modèle:") || !strcmp(nouv_ligne->txt, "Modele:") || !strcmp(nouv_ligne->txt, "modèle:") || !strcmp(nouv_ligne->txt, "modele:"))
-			{nouv_ligne->tag = _modele;}
-			else if ((nouv_ligne->txt[0] == '*' && nouv_ligne->txt[1] == ' ') || !fin_txt_ignore)
-			{
-				nouv_ligne->tag = _ignore;
-				for (fin_txt_ignore = 0; nouv_ligne->txt[fin_txt_ignore] != '\000' && !(nouv_ligne->txt[fin_txt_ignore] == '*' && nouv_ligne->txt[fin_txt_ignore - 1] == ' ' \
-					&& (nouv_ligne->txt[fin_txt_ignore - 1] == ' ' || nouv_ligne->txt[fin_txt_ignore - 1] == '\000')); fin_txt_ignore++) {}
-				if (nouv_ligne->txt[fin_txt_ignore] == '\000')
-				{fin_txt_ignore = 0;}
-			}
-			else if ((nouv_ligne->txt[0] == '/' && nouv_ligne->txt[1] == '*' && nouv_ligne->txt[2] == ' ') || !fin_commentaire)
-			{
-				nouv_ligne->tag = _commentaire;
-				for (fin_commentaire = 0; nouv_ligne->txt[fin_commentaire] != '\000' && !(nouv_ligne->txt[fin_commentaire] == '*' && nouv_ligne->txt[fin_commentaire + 1] == '/'); fin_commentaire++) {}
-				if (nouv_ligne->txt[fin_commentaire] == '\000')
-				{fin_commentaire = 0;}
-			}
-			else
-			{
-				if (nouv_ligne->txt[0] == '@')
-				{override = 1;}
-				
-				for (compteur = 3; nouv_ligne->txt[compteur] != ':' && nouv_ligne->txt[compteur] != '\000' && nouv_ligne->txt[compteur] != ' '; compteur++) {}
-				
-				if (nouv_ligne->txt[compteur] == ':')
-				{
-					if (override)
-					{nouv_ligne->tag = _element_ovr;}
-					else
-					{nouv_ligne->tag = _element;}
-				}
-				else if (nouv_ligne->txt[compteur] == ' ' && nouv_ligne->txt[compteur + 1] == '-' && nouv_ligne->txt[compteur + 2] == '>' && nouv_ligne->txt[compteur + 3] == ' ')
-				{nouv_ligne->tag = _override;}
-				else if (nouv_ligne->txt[compteur] != ' ')
-				{
-					if (override)
-					{nouv_ligne->tag = _override;}
-					else if (strcmp(nouv_ligne->txt, "") != 0)
-					{nouv_ligne->tag = _pointeur;}
-				}
-			}
-		}
-		
-		//Identification du type d'élément:
-		if (nouv_ligne->tag == _element || nouv_ligne->tag == _element_ovr)
-		{
-			if (tolower(nouv_ligne->txt[0 + override]) == 'n' && nouv_ligne->txt[1 + override] == 'o' && nouv_ligne->txt[2 + override] == 'm')
-			{nouv_ligne->type = _nom;} //nom
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && nouv_ligne->txt[1 + override] == 'e' && nouv_ligne->txt[2 + override] == 's' && nouv_ligne->txt[3 + override] == 'c' && nouv_ligne->txt[4 + override] == 'r')
-			{nouv_ligne->type = _descr;} //descr
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && (nouv_ligne->txt[1 + override] == 'e' || nouv_ligne->txt[1 + override] == -61) && (nouv_ligne->txt[2 + override] == 't' || nouv_ligne->txt[2 + override] == -87) \
-				&& (nouv_ligne->txt[3 + override] == 'a' || (nouv_ligne->txt[3 + override] == 't' && nouv_ligne->txt[4 + override] == 'a')))
-			{nouv_ligne->type = _detail;} //détail / detail
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'r' && nouv_ligne->txt[1 + override] == 'u' && nouv_ligne->txt[2 + override] == 'm')
-			{nouv_ligne->type = _rum;} //rum
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'i' && nouv_ligne->txt[1 + override] == 'm' && nouv_ligne->txt[2 + override] == 'g')
-			{nouv_ligne->type = _img;} //img
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'e' && nouv_ligne->txt[1 + override] == 'n' && nouv_ligne->txt[2 + override] == 'd')
-			{nouv_ligne->type = _endroit;} //end
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'p' && nouv_ligne->txt[1 + override] == 'o' && nouv_ligne->txt[2 + override] == 'i' && nouv_ligne->txt[3 + override] == 'd' && nouv_ligne->txt[4 + override] == 's')
-			{nouv_ligne->type = _poids;} //poids
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'c' && nouv_ligne->txt[1 + override] == 'a' && nouv_ligne->txt[2 + override] == 'p')
-			{nouv_ligne->type = _cap;} //cap
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'v' && nouv_ligne->txt[1 + override] == 'i' && nouv_ligne->txt[2 + override] == 'e')
-			{nouv_ligne->type = _vie;} //vie
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'c' && nouv_ligne->txt[1 + override] == 'o' && nouv_ligne->txt[2 + override] == 'n' && nouv_ligne->txt[3 + override] == 'f')
-			{nouv_ligne->type = _conf;} //conf
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && ((nouv_ligne->txt[1 + override] == 'e' && nouv_ligne->txt[2 + override] == 'g') || (nouv_ligne->txt[1 + override] == -61 && nouv_ligne->txt[2 + override] == -87 \
-				&& nouv_ligne->txt[3 + override] == 'g')))
-			{nouv_ligne->type = _deg;} //dég / deg
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'l' && nouv_ligne->txt[1 + override] == 'u' && nouv_ligne->txt[2 + override] == 'm')
-			{nouv_ligne->type = _lum;} //lum
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'f' && nouv_ligne->txt[1 + override] == 'a' && nouv_ligne->txt[2 + override] == 'i' && nouv_ligne->txt[3 + override] == 'm')
-			{nouv_ligne->type = _faim;} //faim
-			else if ((tolower(nouv_ligne->txt[0 + override]) == 'e' && nouv_ligne->txt[1 + override] == 't' && nouv_ligne->txt[2 + override] == 'a' && nouv_ligne->txt[3 + override] == 't') \
-				|| (nouv_ligne->txt[0 + override] == -61 && (nouv_ligne->txt[1 + override] == -87 || nouv_ligne->txt[1 + override] == -119) && nouv_ligne->txt[2 + override] == 't' && nouv_ligne->txt[3 + override] == 'a' \
-				&& nouv_ligne->txt[4 + override] == 't'))
-			{nouv_ligne->type = _etat;} //état / etat
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'c' && nouv_ligne->txt[1 + override] == 'o' && nouv_ligne->txt[2 + override] == 'n' && nouv_ligne->txt[3 + override] == 'd')
-			{nouv_ligne->type = _cond;} //cond
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && nouv_ligne->txt[1 + override] == 'e' && nouv_ligne->txt[2 + override] == 's' && nouv_ligne->txt[3 + override] == 't')
-			{nouv_ligne->type = _dest;} //dest
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'i' && nouv_ligne->txt[1 + override] == 'm' && nouv_ligne->txt[2 + override] == 'p')
-			{nouv_ligne->type = _imp;} //imp
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && nouv_ligne->txt[1 + override] == 'i' && nouv_ligne->txt[2 + override] == 's' && nouv_ligne->txt[3 + override] == 't')
-			{nouv_ligne->type = _dist;} //dist
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'a' && nouv_ligne->txt[1 + override] == 'm' && nouv_ligne->txt[2 + override] == 'b')
-			{nouv_ligne->type = _amb;} //amb
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'p' && nouv_ligne->txt[1 + override] == 't' && nouv_ligne->txt[2 + override] == 'v')
-			{nouv_ligne->type = _ptv;} //ptv
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'o' && nouv_ligne->txt[1 + override] == 'u' && nouv_ligne->txt[2 + override] == 'v')
-			{nouv_ligne->type = _ouv;} //ouv
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'f' && nouv_ligne->txt[1 + override] == 'e' && nouv_ligne->txt[2 + override] == 'r')
-			{nouv_ligne->type = _fer;} //fer
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && ((nouv_ligne->txt[1 + override] == 'e' && nouv_ligne->txt[2 + override] == 'b') || (nouv_ligne->txt[1 + override] == -61 && nouv_ligne->txt[2 + override] == -87 \
-				&& nouv_ligne->txt[3 + override] == 'b')))
-			{nouv_ligne->type = _deb;} //déb / deb
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'b' && nouv_ligne->txt[1 + override] == 'a' && nouv_ligne->txt[2 + override] == 'r')
-			{nouv_ligne->type = _bar;} //bar
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'i' && nouv_ligne->txt[1 + override] == 'n' && nouv_ligne->txt[2 + override] == 't')
-			{nouv_ligne->type = _int;} //int
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'a' && nouv_ligne->txt[1 + override] == '-' && tolower(nouv_ligne->txt[2 + override]) == 'd')
-			{nouv_ligne->type = _a_d;} //a-d
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'd' && nouv_ligne->txt[1 + override] == '-' && tolower(nouv_ligne->txt[2 + override]) == 'i')
-			{nouv_ligne->type = _d_i;} //d-i
-			else if (tolower(nouv_ligne->txt[0 + override]) == 'a' && nouv_ligne->txt[1 + override] == '-' && tolower(nouv_ligne->txt[2 + override]) == 'a')
-			{nouv_ligne->type = _a_a;} //a-a
-			else
-			{nouv_ligne->type = _inconnu;}
-		}
-		else
-		{nouv_ligne->type = _pas_un_element;}
 		
 		return nouv_ligne;
 	}

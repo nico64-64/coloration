@@ -13,7 +13,7 @@
 
 
 //Version du programme:
-#define VERSION "0.5.0"
+#define VERSION "0.6.1"
 
 //Valeurs Macros:
 #define NBRE_CAR_MAX_PAR_LIGNE 499
@@ -231,7 +231,7 @@ char msg_en_attente[300] = ""; //indique si un message devrait être réaffiché
 #define mvaddstrc(position_y, texte);	mvaddstr(position_y, (COLS - longueur_str(texte)) / 2, texte); //affiche une string centrée (sur une ligne y)
 
 //Initialisation et libération de la mémoire:
-#define init();		for (int _COMPTEUR = 1; init_ligne(_COMPTEUR) != NULL; _COMPTEUR++) {} //initialise toutes les lignes du fichier
+#define init();		for (int _COMPTEUR = 1; init_ligne(_COMPTEUR) != NULL; _COMPTEUR++) {}; verifie_syntaxe(); //initialise toutes les lignes du fichier
 #define desinit();	for (int _COMPTEUR = init_ligne(0)->num; _COMPTEUR >= 1; _COMPTEUR--) {init_ligne(-_COMPTEUR);} //libère toute les lignes du fichier
 
 //Gestion de base des accents si accents.h n'est pas inclus:
