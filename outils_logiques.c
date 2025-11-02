@@ -390,6 +390,8 @@ void verifie_syntaxe()
 	
 	while (ln != &FIN_FICHIER)
 	{
+		override = 0;
+		
 		//Mise en place du tag:
 		ln->tag = 0; //ne devrait jamais être le cas, sauf pour les lignes vides
 		if (!strcmp(ln->txt, "-DÉBUT-") && txt_a_ignorer)

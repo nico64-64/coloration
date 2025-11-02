@@ -354,6 +354,7 @@ int afficher_ligne(ligne* ln)
 	{addch(' '); attrset(COLOR_PAIR(8) | A_BOLD); printw("..."); standend();}
 	
 	//Écrit un caractère vide de plus (pour compenser lorsqu'on efface):
+	attroff(A_UNDERLINE); //empêche ce caractère de plus d'être souligné (les couleur ou le gras, on s'en fout, mais ça, ça paraît...)
 	getyx(stdscr, y, x);
 	if (x <= COLS - 2)
 	{addch(' ');}

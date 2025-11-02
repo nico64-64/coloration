@@ -543,7 +543,7 @@ void cmd(char commande[])
 	
 	//Rafraichir:
 	else if (!strcmp(mot[0], "rafraichir"))
-	{rafraichir(); erreur(0, "...");}
+	{verifie_syntaxe(); rafraichir(); erreur(0, "...");}
 	
 	//Quitter:
 	else if (!strcmp(mot[0], "quitter"))
@@ -631,7 +631,7 @@ void cmd(char commande[])
 		rafraichir();
 	}
 	
-	//Enregistrer ou Sauvegarder:
+	//Enregistrer:
 	else if (!strcmp(mot[0], "enregistrer") || !strcmp(mot[0], "enr"))
 	{
 		if (!strcmp(mot[1], "comme") || !strcmp(mot[1], "sous"))
@@ -641,6 +641,8 @@ void cmd(char commande[])
 		else
 		{enregistrer(mot[1]);}
 	}
+	
+	//Sauvegarder:
 	else if (!strcmp(mot[0], "sauvegarder") || !strcmp(mot[0], "sauv"))
 	{enregistrer(nom_fichier);}
 	
@@ -653,9 +655,45 @@ void cmd(char commande[])
 		{ouvrir(mot[1]);}
 	}
 	
+	//Activer/Désactiver la coloration syntaxique:
+	else if (!strcmp(mot[0], "coloration") || !strcmp(mot[0], "syntaxe") || !strcmp(mot[0], "couleur") || !strcmp(mot[0], "couleurs"))
+	{
+		if (!coloration_syntaxique)
+		{coloration_syntaxique = 1; rafraichir(); print_msg("Coloration syntaxique activée.");}
+		else
+		{coloration_syntaxique = 0; rafraichir(); print_msg("Coloration syntaxique désactivée.");}
+	}
+	
 	//Ouvir le menu des options:
 	else if (!strcmp(mot[0], "menu") || !strcmp(mot[0], "options"))
 	{menu_options();}
+	
+	//Paramètres avancés:
+	else if (!strcmp(mot[0], "parametres") || !strcmp(mot[0], "parametre") | !strcmp(mot[0], "param") || !strcmp(mot[0], "params"))
+	{
+		curs_set(0);
+		param_avances();
+		curs_set(1);
+	}
+
+	//Gestion des accents:
+	#ifdef _ACCENTS_H
+	else if (!strcmp(mot[0], "accents") || !strcmp(mot[0], "accent"))
+	{
+		buffint = gestion_accents();
+		rafraichir();
+		if (!buffint)
+		{erreur(0, "...");}
+	}
+	#endif
+		
+	//Afficher les crédits:
+	else if (!strcmp(mot[0], "credits") || !strcmp(mot[0], "credit"))
+	{
+		curs_set(0);
+		credits();
+		curs_set(1);
+	}
 	
 	//Aucune commande:
 	else if (!strcmp(mot[0], "(null)"))
@@ -960,9 +998,24 @@ int main(int argc, char* argv[])
 				buffint = x;
 				buffint2 = ln_mod->multiligne;
 				
-				//Effaçage, vérification de la syntaxe et gestion d'erreur:
-				if (efface_car(ln_mod->txt, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)) - 1) == ERREUR)
-				{erreur(0, "...");}
+				//Vérifions si le caractère précédent est un accent:
+				buffer[0] = relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)) - 2;
+				buffer[1] = relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)) - 1;
+				buffer[3] = '\000';
+				if (str_est_un_accent(buffer))
+				{
+					//Effaçage et gestion d'erreur:
+					if (efface_car(ln_mod->txt, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)) - 2) == ERREUR)
+					{erreur(0, "...");}
+				}
+				else
+				{
+					//Effaçage et gestion d'erreur:
+					if (efface_car(ln_mod->txt, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)) - 1) == ERREUR)
+					{erreur(0, "...");}
+				}
+				
+				//Vérification de la syntaxe:
 				verifie_syntaxe();
 				
 				//On redessine d'abord seulement cette ligne:
@@ -1151,26 +1204,22 @@ int main(int argc, char* argv[])
 				switch (keyname(input)[6])
 				{
 				case '1': //F1 = Activation/Désactivation de la coloration syntaxique
-					if (!coloration_syntaxique)
-					{coloration_syntaxique = 1; rafraichir(); print_msg("Coloration syntaxique activée.");}
-					else
-					{coloration_syntaxique = 0; rafraichir(); print_msg("Coloration syntaxique désactivée.");}
+					cmd("coloration");
 					break;
 				
 				case '2': //F2 = Paramètres avancés
-					curs_set(0);
-					param_avances();
-					curs_set(1);
+					cmd("parametres");
 					break;
 				
 				#ifdef _ACCENTS_H
 				case '3': //F3 = Gestion des accents
-					buffint = gestion_accents();
-					rafraichir();
-					if (!buffint)
-					{erreur(0, "...");}
+					cmd("accents");
 					break;
 				#endif
+				
+				case '4': //F4 = Entrer une commande (alternative à Ctrl-P)
+					cmd(NULL);
+					break;
 				}
 			}
 			

@@ -1219,7 +1219,7 @@ void modifier_accent(int num)
 						mvaddstrc(yi + 4, "sauvegarde des accents et y modifier");
 						mvaddstrc(yi + 5, "manuellement le caractère désiré.");
 						mvaddstrc(yi + 6, "Vous trouverez le nom du fichier dans");
-						mvaddstrc(yi + 6, "les paramètres avancés.");
+						mvaddstrc(yi + 7, "les paramètres avancés.");
 						mvaddstrc(yf - 3, "Appuyer sur \"Enter\" pour continuer.");
 						standend();
 						mvaddstrc(yf - 1, "< OK >");
