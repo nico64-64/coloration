@@ -142,6 +142,7 @@ void enregistrer(char nom_sauvegarde[])
 	int pos = 0;
 	ligne* ln = DEBUT_FICHIER.suivant;
 	FILE* fsauv = NULL;
+	MEVENT mev;
 		
 	//Prise du nom de fichier:
 	if (nom_sauvegarde == NULL)
@@ -153,7 +154,6 @@ void enregistrer(char nom_sauvegarde[])
 		//Liste des options:
 		mvprintw(LINES - 1, 4, "Annuler");
 		mvprintw(LINES - 1, 16, "Aide");
-		mvprintw(LINES - 1, 25, "Visualiser");
 		
 		if (COLS - longueur_str("Enregistrement ") > 34)
 		{mvprintw(LINES - 1, COLS - longueur_str("Enregistrement "), "Enregistrement ");}
@@ -165,7 +165,6 @@ void enregistrer(char nom_sauvegarde[])
 		//Écriture des raccourcis:
 		mvprintw(LINES - 1, 1, "^C");
 		mvprintw(LINES - 1, 13, "^A");
-		mvprintw(LINES - 1, 22, "^V");
 		
 		//Mise en forme de la ligne de commande:
 		mvprintw(LINES - 2, 1, "Nom du fichier: ");
@@ -176,6 +175,10 @@ void enregistrer(char nom_sauvegarde[])
 			do
 			{input = getch();} while (input == -1);
 			
+			//Clic de souris:
+			if (input == KEY_MOUSE)
+			{getmouse(&mev);}
+			
 			//Caractères imprimables (sauf les accents, mais bon...)
 			if (input >= ' ' && input <= 126 && pos < 74)
 			{nom[pos] = input; pos++; addch(input);}
@@ -185,11 +188,11 @@ void enregistrer(char nom_sauvegarde[])
 			{pos--; mvaddch(LINES - 2, 17 + pos, ' '); move(LINES - 2, 17 + pos);}
 			
 			//Ctrl-C: Annuler
-			else if (!strcmp(keyname(input), "^C"))
+			else if (!strcmp(keyname(input), "^C") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 12))
 			{rafraichir(); return;}
 			
 			//Ctrl-A: Aide
-			else if (!strcmp(keyname(input), "^A"))
+			else if (!strcmp(keyname(input), "^A") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 21))
 			{aide(5); enregistrer(nom_sauvegarde); rafraichir(); return;}
 		}
 		nom[pos] = '\000';
@@ -218,6 +221,7 @@ void enregistrer(char nom_sauvegarde[])
 	//Écriture d'un message de confirmation:
 	rafraichir();
 	print_msg("Fichier enregistré.");
+	fichier_sauvegarde = TRUE;
 }
 
 
@@ -228,6 +232,7 @@ void term()
 	int input = EOF;
 	char commande[151] = "";
 	int pos = 0;
+	MEVENT mev;
 	
 	
 	//Effaçage du bas de l'écran:
@@ -264,6 +269,10 @@ void term()
 		do
 		{input = getch();} while (input == -1);
 		
+		//Clic de souris:
+		if (input == KEY_MOUSE)
+		{getmouse(&mev);}
+		
 		//Caractères imprimables (sauf les accents, mais bon...)
 		if (input >= ' ' && input <= 126 && pos < 150)
 		{commande[pos] = input; pos++; addch(input);}
@@ -273,15 +282,15 @@ void term()
 		{pos--; mvaddch(LINES - 2, 11 + pos, ' '); move(LINES - 2, 11 + pos);}
 		
 		//Ctrl-C: Annuler
-		else if (!strcmp(keyname(input), "^C"))
+		else if (!strcmp(keyname(input), "^C") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 12))
 		{rafraichir(); return;}
 		
 		//Ctrl-A: Aide
-		else if (!strcmp(keyname(input), "^A"))
+		else if (!strcmp(keyname(input), "^A") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 21))
 		{aide(11); term(); rafraichir(); return;}
 		
 		//Ctrl-O: Options
-		else if (!strcmp(keyname(input), "^T"))
+		else if (!strcmp(keyname(input), "^T") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 53))
 		{strcpy(commande, "bash"); pos = 4; input = 13;} //13 = Enter
 	}
 	commande[pos] = '\000';
@@ -290,7 +299,7 @@ void term()
 	if (!strcmp(commande, "bash"))
 	{
 		system("clear"); //efface le contenu du terminal...
-		printf("Terminal Bash ouvert depuis l'éditeur COLORATION:\nPour revenir à l'éditeur, entrez la commande \"exit\".\n\n"); //affiche un message indiquant comment quitter/revenir
+		printf("Terminal Bash ouvert depuis COLORATION:\nPour revenir à l'éditeur, entrez la commande \"exit\".\n\n"); //affiche un message indiquant comment quitter/revenir
 		system(commande); //envoie la commande pour que la shell l'exécute
 		system("clear");
 	}
@@ -316,6 +325,7 @@ ligne* aller_a(int num)
 	int pos = 0;
 	int input = EOF;
 	ligne* buff = NULL;
+	MEVENT mev;
 	
 	if (!num)
 	{
@@ -346,6 +356,10 @@ ligne* aller_a(int num)
 			do
 			{input = getch();} while (input == -1);
 			
+			//Clic de souris:
+			if (input == KEY_MOUSE)
+			{getmouse(&mev);}
+			
 			//Caractères imprimables (sauf les accents, mais bon...)
 			if (input >= '0' && input <= '9' && pos < 7)
 			{nl[pos] = input; pos++; addch(input);}
@@ -355,11 +369,11 @@ ligne* aller_a(int num)
 			{pos--; mvaddch(LINES - 2, 18 + pos, ' '); move(LINES - 2, 18 + pos);}
 			
 			//Ctrl-C: Annuler
-			else if (!strcmp(keyname(input), "^C"))
+			else if (!strcmp(keyname(input), "^C") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 12))
 			{rafraichir(); return NULL;}
 			
 			//Ctrl-A: Aide
-			else if (!strcmp(keyname(input), "^A"))
+			else if (!strcmp(keyname(input), "^A") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 21))
 			{aide(8); buff = aller_a(num); rafraichir(); return buff;}
 		}
 		nl[pos] = '\000';
@@ -388,6 +402,7 @@ void ouvrir(char nom_nouveau_fichier[])
 	char nom[100] = "";
 	char buffer[100];
 	FILE* nouveau_fichier = NULL;
+	MEVENT mev;
 	
 	//Demande le nom du fichier à ouvrir, si nécessaire:
 	if (nom_nouveau_fichier == NULL)
@@ -399,7 +414,7 @@ void ouvrir(char nom_nouveau_fichier[])
 		//Liste des options:
 		mvprintw(LINES - 1, 4, "Annuler");
 		mvprintw(LINES - 1, 16, "Aide");
-		mvprintw(LINES - 1, 25, "Visualiser");
+		mvprintw(LINES - 1, 25, "Lister les fichiers");
 		
 		if (COLS - longueur_str("Ouverture ") > 34)
 		{mvprintw(LINES - 1, COLS - longueur_str("Ouverture "), "Ouverture ");}
@@ -411,7 +426,7 @@ void ouvrir(char nom_nouveau_fichier[])
 		//Écriture des raccourcis:
 		mvprintw(LINES - 1, 1, "^C");
 		mvprintw(LINES - 1, 13, "^A");
-		mvprintw(LINES - 1, 22, "^V");
+		mvprintw(LINES - 1, 22, "^L");
 		
 		//Mise en forme de la ligne de commande:
 		mvprintw(LINES - 2, 1, "Nom du fichier: ");
@@ -422,6 +437,10 @@ void ouvrir(char nom_nouveau_fichier[])
 			do
 			{input = getch();} while (input == -1);
 			
+			//Clic de souris:
+			if (input == KEY_MOUSE)
+			{getmouse(&mev);}
+			
 			//Caractères imprimables (sauf les accents, mais bon...)
 			if (input >= ' ' && input <= 126 && pos < 74)
 			{nom[pos] = input; pos++; addch(input);}
@@ -431,12 +450,16 @@ void ouvrir(char nom_nouveau_fichier[])
 			{pos--; mvaddch(LINES - 2, 17 + pos, ' '); move(LINES - 2, 17 + pos);}
 			
 			//Ctrl-C: Annuler
-			else if (!strcmp(keyname(input), "^C"))
+			else if (!strcmp(keyname(input), "^C") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 12))
 			{rafraichir(); return;}
 			
 			//Ctrl-A: Aide
-			else if (!strcmp(keyname(input), "^A"))
+			else if (!strcmp(keyname(input), "^A") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 21))
 			{aide(7); ouvrir(nom_nouveau_fichier); rafraichir(); return;}
+			
+			//Ctrl-V: Visualiser/Lister
+			else if (!strcmp(keyname(input), "^L") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 45))
+			{cmd("visualiser"); ouvrir(nom_nouveau_fichier); return;}
 		}
 		nom[pos] = '\000';
 	}
@@ -455,6 +478,10 @@ void ouvrir(char nom_nouveau_fichier[])
 		fclose(nouveau_fichier);
 	}
 	
+	//Demande une confirmation avant de fermer le fichier ouvert actuellement:
+	if (!demande_quitter())
+	{return;}
+	
 	//Redémarrage du programme avec le nouveau fichier en argument:
 	desinit();
 	quitter(-1);
@@ -463,6 +490,63 @@ void ouvrir(char nom_nouveau_fichier[])
 	else
 	{execl("./coloration", "coloration", nom, NULL);}
 	exit(0);
+}
+
+
+bool demande_quitter()
+//Demande à l'utilisateur s'il veut sauvegarder son fichier avant de quitter si le fichier a été modifié depuis la dernière sauvegarde et que le paramètre correspondant est activé.
+//Renvoie TRUE pour quitter ou FALSE si l'utilisateur change d'idée (annulation).
+{
+	int input;
+	MEVENT mev;
+	
+	if (!confirmation_quitter || fichier_sauvegarde)
+	{return TRUE;}
+	
+	//Effaçage du bas de l'écran:
+	standend();
+	mvhline(LINES - 1, 0, ' ', COLS);
+	mvhline(LINES - 2, 0, ' ', COLS);
+	
+	//Liste des options:
+	mvprintw(LINES - 2, 4, "Quitter sans sauvegarder");
+	mvprintw(LINES - 1, 4, "Sauvegarder et quitter");
+	mvprintw(LINES - 1, 31, "Annuler");
+	
+	//Écriture des raccourcis:
+	attrset(COLOR_PAIR(10));
+	mvprintw(LINES - 1, 1, "^S");
+	mvprintw(LINES - 2, 1, "^Q");
+	mvprintw(LINES - 1, 28, "^C");
+	
+	//Affichage du message:
+	print_msg("Voulez-vous sauvegarder avant de quitter?");
+	
+	//Prise de la commande:
+	while (1)
+	{
+		do
+		{input = getch();} while (input == -1);
+		
+		//Clic de souris:
+		if (input == KEY_MOUSE)
+		{getmouse(&mev);}
+		
+		//Ctrl-S, 's', 'S', 'o', 'O', 'y' ou 'Y': Sauvegarder et Quitter
+		if (!strcmp(keyname(input), "^S") || input == 's' || input == 'S' || input == 'o' || input == 'O' || input == 'y' || input == 'Y' \
+			|| (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 27))
+		{cmd("sauvegarder"); return TRUE;}
+		
+		//Ctrl-Q, 'q', 'Q', 'n' ou 'N': Quitter sans sauvegarder
+		else if (!strcmp(keyname(input), "^Q") || input == 'q' || input == 'Q' || input == 'n' || input == 'N' \
+			|| (input == KEY_MOUSE && mev.y == LINES - 2 && mev.x < 29))
+		{return TRUE;}
+		
+		//Ctrl-C, Ctrl-A, Esc, 'c', 'C', 'a' ou 'A': Annuler
+		else if (!strcmp(keyname(input), "^C") || !strcmp(keyname(input), "^A") || !strcmp(keyname(input), "^[") || input == 'c' || input == 'C' || input == 'a' || input == 'A' \
+			|| (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 39))
+		{rafraichir(); return FALSE;}
+	}
 }
 
 
@@ -477,6 +561,7 @@ void cmd(char commande[])
 	char _cmd[75] = ""; //commande à exécuter (soit "commande" ou la commande reçue de l'utilisateur si c'est NULL)
 	char mot[4][25]; //array qui contiendra les différents mots (jusqu'à 4) de la commande une fois parsée
 	ligne* buffln = NULL;
+	MEVENT mev;
 	
 	
 	//Prise de la commande:
@@ -507,6 +592,10 @@ void cmd(char commande[])
 			do
 			{input = getch();} while (input == -1);
 			
+			//Souris:
+			if (input == KEY_MOUSE)
+			{getmouse(&mev);}
+			
 			//Caractères imprimables (sauf les accents, mais bon...)
 			if (input >= ' ' && input <= 126 && pos < 74)
 			{_cmd[pos] = input; pos++; addch(input);}
@@ -516,11 +605,11 @@ void cmd(char commande[])
 			{pos--; mvaddch(LINES - 2, 11 + pos, ' '); move(LINES - 2, 11 + pos);}
 			
 			//Ctrl-C: Annuler
-			else if (!strcmp(keyname(input), "^C"))
+			else if (!strcmp(keyname(input), "^C") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 12))
 			{rafraichir(); return;}
 			
 			//Ctrl-A: Aide
-			else if (!strcmp(keyname(input), "^A"))
+			else if (!strcmp(keyname(input), "^A") || (input == KEY_MOUSE && mev.y == LINES - 1 && mev.x < 21))
 			{aide(10); cmd(NULL); return;}
 		}
 		_cmd[pos] = '\000';
@@ -547,7 +636,10 @@ void cmd(char commande[])
 	
 	//Quitter:
 	else if (!strcmp(mot[0], "quitter"))
-	{desinit(); quitter(0);}
+	{
+		if (demande_quitter())
+		{desinit(); quitter(0);}
+	}
 	
 	//Aller à une certaine ligne dans le fichier:
 	else if (!strcmp(mot[0], "aller") || !strcmp(mot[0], "ligne"))
@@ -695,6 +787,17 @@ void cmd(char commande[])
 		curs_set(1);
 	}
 	
+	//Visualiser / Lister les fichiers:
+	else if (!strcmp(mot[0], "visualiser") || !strcmp(mot[0], "lister"))
+	{
+		endwin();
+		printf("\n");
+		system("ls -l --color=auto");
+		printf("\nAppuyez sur \"Enter\" pour revenir à l'éditeur.\n");
+		while (getchar() != '\n') {} //J'haïs vraiment comment getchar (ne) fonctionne (pas)...
+		rafraichir();
+	}
+	
 	//Aucune commande:
 	else if (!strcmp(mot[0], "(null)"))
 	{rafraichir();}
@@ -705,14 +808,100 @@ void cmd(char commande[])
 }
 
 
+int souris(MEVENT mev)
+//Transforme un clic de souris en l'input clavier correspondant.
+//Reçoit le mouse event en paramètre et renvoie une "émulation de touche / caractère" (int).
+//Renvoie ERR s'il n'y a rien à faire (ce n'est pas nécessairement une erreur!).
+{
+	/* Boutons de souris:
+	
+	 BOUTON | # | RELÂCHÉ | APPUYÉ | CLIC | DOUBLE CLIC | TRIPLE CLIC
+	________|___|_________|________|______|_____________|_____________
+	 gauche | 1 |    1    |    2   |   4  |      8      |      16
+	________|___|_________|________|______|_____________|_____________
+	 droite | 3 |   1024  |  2048  | 4096 |     8192    |    16384
+	________|___|_________|________|______|_____________|_____________
+	 milieu | 2 |    32   |   64   |  128 |     256     |     512
+	________|___|_________|________|______|_____________|_____________
+	
+	 BOUTON  | HAUT (#4) |  BAS (#5)
+	_________|___________|___________
+	 molette |   65 536  | 2 097 152
+	_________|___________|___________
+	
+	Modificateurs: Shift (pas en desktop), Ctrl, Alt (pas en desktop)
+	
+	*/
+	
+	if (mev.y == LINES - 2)
+	{
+		if (mev.x < 16)
+		{return 17;} //^Q
+		else if (mev.x < 28)
+		{return 1;} //^A
+		else if (mev.x < 44)
+		{return 14;} //^N
+		else if (mev.x < 56)
+		{return 26;} //^Z
+		else if (mev.x < 67)
+		{return 3;} //^C
+		else if (mev.x < 82)
+		{return 24;} //^X
+		else if (mev.x < 110)
+		{return 6;} //^F
+		else if (mev.x < 137)
+		{/*return 534;*/} //^down
+		else if (mev.x < 153)
+		{return 542;} //M-Home
+		else if (mev.x < 176)
+		{return 87;} //^W
+		else if (mev.x < 199)
+		{return 27;} //Esc
+		else if (mev.x < 225)
+		{return 265;} //F1
+	}
+	else if (mev.y == LINES - 1)
+	{
+		if (mev.x < 16)
+		{return 19;} //^S
+		else if (mev.x < 28)
+		{return 16;} //^P
+		else if (mev.x < 44)
+		{return 5;} //^E
+		else if (mev.x < 56)
+		{return 25;} //^Y
+		else if (mev.x < 67)
+		{return 22;} //^V
+		else if (mev.x < 82)
+		{return 18;} //^R
+		else if (mev.x < 10)
+		{return 12;} //^L
+		else if (mev.x < 137)
+		{/*return 575;*/} //^up
+		else if (mev.x < 153)
+		{return 537;} //M-end
+		else if (mev.x < 176)
+		{return 20;} //^T
+		else if (mev.x < 199)
+		{return 7;} //^G
+		else if (mev.x < 225)
+		{return 4;} //F1
+	}
+	
+	return ERR;
+}
+
+
 int main(int argc, char* argv[])
 //Initialise le programme, puis gère la main loop de l'éditeur.
 {
-	int input = EOF; //caractère reçu en input (doit être déclaré int pour accepter les accents, Ctrl-car., etc.)
-	char buffer[20] = "";
+	int input = ERR; //caractère reçu en input (doit être déclaré int pour accepter les accents, Ctrl-car., etc.)
+	bool touche_emulee = TRUE; //la "1ère touche appuyée/simulée" est en fait un 0 qui sert juste à afficher les messages si nécessaire
+	char buffer[80] = "";
 	int buffint;
 	int buffint2;
 	ligne* buffln = NULL;
+	MEVENT mev; //mouse event
 	
 	
 	//Arguments:
@@ -762,14 +951,24 @@ int main(int argc, char* argv[])
 		init_pair(4, COLOR_CYAN, COLOR_BLACK);
 		init_pair(5, COLOR_BLUE, COLOR_BLACK);
 		init_pair(6, COLOR_RED, COLOR_BLACK);
-		init_pair(7, 190, COLOR_BLACK);
+		init_pair(7, 190, COLOR_BLACK); //jaune-vert sur noir
 		init_pair(8, COLOR_WHITE, COLOR_RED);
 		init_pair(10, COLOR_BLACK, COLOR_WHITE);
 		init_pair(11, COLOR_WHITE, COLOR_BLACK);
 		init_pair(12, COLOR_RED, COLOR_WHITE);
 	}
 	else
-	{printf("Ce terminal ne supporte pas l'affichage en couleur.\nVeuillez réessayer avec un autre terminal.\n\n"); quitter(1);}
+	{
+		endwin();
+		printf("Ce terminal ne supporte pas l'affichage en couleur.\nVeuillez réessayer avec un autre terminal.\n\n");
+		quitter(1);
+	}
+	
+	//Initialisation de la prise en charge de la souris (si activée):
+	if (!souris_activee)
+	{strcpy(msg_en_attente, "La prise en charge de la souris a été désactivée dans les paramètres avancés du programme.");}
+	else if (!mousemask(ALL_MOUSE_EVENTS, NULL)) //active le support de la souris
+	{strcpy(msg_en_attente, "Ce terminal ne supporte pas l'utilisation de la souris");}
 	
 	//Ajout du nom du fichier à la commande permettant de le compiler comme liste d'objets:
 	strcpy(compilateur_liste, cmd_compiler_liste);
@@ -782,6 +981,7 @@ int main(int argc, char* argv[])
 	ln_mod = trouve_ligne(premiere_ligne);
 	while (erreur(0, "...") != 0) {} //affiche à l'écran toute erreur qui aurait pu avoir lieu durant l'initialisation
 	mv(1, 4);
+	fichier_sauvegarde = TRUE;
 	
 	
 	//Main Loop:
@@ -800,17 +1000,31 @@ int main(int argc, char* argv[])
 		}
 		
 		//Prise de l'input:
-		do
-		{input = getch();} while (input == -1);
+		if (!touche_emulee)
+		{
+			do
+			{input = getch();} while (input == -1);
+		}
+		else
+		{touche_emulee = FALSE;}
 		
 		//Réaffichage de la barre si nécessaire:
-		if (!barre_dispo)
+		if (msg_en_attente[0] != '\000')
+		{print_msg(msg_en_attente); msg_en_attente[0] = '\000';}
+		else if (!barre_dispo)
 		{print_msg(NULL);}
 		
 		//Débogage de l'input:
 		if (debogage && element_debogue == 'i') //mode input
 		{
-			print_msg((char*) keyname(input)); //affichage du caractère reçu (son "nom"...)
+			if (input == KEY_MOUSE) //débogage de la souris
+			{
+				getmouse(&mev);
+				sprintf(buffer, "KEY_MOUSE (x=%d, y=%d, bouton %d)", mev.x, mev.y, mev.bstate);
+				print_msg(buffer);
+			}
+			else
+			{print_msg((char*) keyname(input));} //affichage du caractère reçu (son "nom"...)
 			if (strcmp(keyname(input), "^D") != 0 && strcmp(keyname(input), "M-#") != 0 && strcmp(keyname(input), "^Q") != 0)
 			{input = -1;} //dans ce mode de débogage, l'input ne doit pas être interprété, sauf ces 3 keys
 		}
@@ -827,6 +1041,13 @@ int main(int argc, char* argv[])
 			rafraichir();
 			sprintf(buffer, "ligne %d", premiere_ligne); //Pour se sauver du trouble, on va juste envoyer le curseur au début de la première ligne...
 			cmd(buffer);
+			break;
+		
+		case KEY_MOUSE: //clic de souris
+			getmouse(&mev);
+			input = souris(mev);
+			if (input != 0)
+			{touche_emulee = TRUE;}
 			break;
 		
 		case KEY_DOWN: //flèche vers le bas
@@ -965,6 +1186,7 @@ int main(int argc, char* argv[])
 			break;
 		
 		case KEY_BACKSPACE: //Backspace = Effacer vers l'arrière
+			fichier_sauvegarde = FALSE;
 			if (x == 4 && pos_y == 1) //effacer un newline
 			{
 				if (y == 1)
@@ -1038,6 +1260,7 @@ int main(int argc, char* argv[])
 			break;
 		
 		case KEY_DC: //Delete = Effacer vers l'avant
+			fichier_sauvegarde = FALSE;
 			if (pos_y == ln_mod->multiligne && x == longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5) + 4) //effacer un newline
 			{
 				if (ln_mod->suivant == &FIN_FICHIER)
@@ -1077,6 +1300,7 @@ int main(int argc, char* argv[])
 			if (isprint(input) || est_un_accent(input))
 			//Caractères imprimables:
 			{
+				fichier_sauvegarde = FALSE;
 				//Attention: logique et calculs obscurs! Code fortement commenté pour tenter de compenser...
 				
 				//Préparation et Insertion:
@@ -1111,8 +1335,8 @@ int main(int argc, char* argv[])
 					break;
 				
 				case 'Q': //Ctrl-Q = Quitter
-					desinit();
-					quitter(0);
+					if (demande_quitter())
+					{desinit(); quitter(0);}
 					break;
 				
 				case 'R': //Ctrl-R = Rafraichir
@@ -1161,6 +1385,7 @@ int main(int argc, char* argv[])
 					break;
 				
 				case 'M': //Ctrl-M = Enter
+					fichier_sauvegarde = FALSE;
 					buffln = insere_ligne(ln_mod, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5))); //insertion "logique" de la ligne au bon endroit
 					if (buffln == NULL)
 					{erreur(50, "Erreur lors de l'insertion de la nouvelle ligne!"); erreur(0, "...");}

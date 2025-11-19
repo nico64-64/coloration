@@ -11,11 +11,18 @@ void menu_options()
 	int yi = (LINES - 2 - 10) / 2; //le -2 sert à centrer en y en excluant toutefois la barre de commandes d'en bas...
 	int yf = yi + 10;
 	int selection = 0; //indique quelle entrée est présentement sélectionnée
+	MEVENT mev;
+	bool touche_emulee = TRUE;
 	
 	curs_set(0); //rend le curseur invisible
 	
 	while (car != 27) //27 = Esc.
 	{
+		if (!touche_emulee)
+		{car = getch();}
+		else
+		{touche_emulee = FALSE;}
+		
 		switch (car)
 		{
 		case KEY_RESIZE:
@@ -54,6 +61,22 @@ void menu_options()
 			mvprintw(yi, xi + 16, " Options "); //titre
 			liste_options(selection); //liste les options et "surligne" la bonne
 			refresh(); //affichage du tout
+			break;
+		
+		case KEY_MOUSE:
+			getmouse(&mev);
+			if (mev.bstate == 65536) //molette vers le haut
+			{car = KEY_UP; touche_emulee = TRUE;}
+			if (mev.bstate == 2097152) //molette vers le bas
+			{car = KEY_DOWN; touche_emulee = TRUE;}
+			else if (mev.x >= xi && mev.x <= xf && mev.y >= yi && mev.y <= yf)
+			{
+				selection = mev.y - yi - 2;
+				liste_options(selection);
+				refresh();
+				car = 13; //enter / ^M
+				touche_emulee = TRUE;
+			}
 			break;
 		
 		case KEY_DOWN:
@@ -106,9 +129,10 @@ void menu_options()
 					return;
 				
 				case 6: //Fermer le programme
-					desinit();
-					quitter(0);
-					break;
+					if (demande_quitter())
+					{desinit(); quitter(0);}
+					curs_set(1);
+					return;
 				}
 			}
 			else if (!strcmp(keyname(car), "^A"))
@@ -116,8 +140,6 @@ void menu_options()
 			else if (!strcmp(keyname(car), "^Q"))
 			{desinit(); quitter(0);}
 		}
-		
-		car = getch();
 	}
 	
 	rafraichir(); //reddessine la fenêtre sans le pop-up
@@ -191,6 +213,7 @@ void aide(int num_cmd)
 	int decalage = 0;
 	int marge = 10;
 	int nbre_accents = 0;
+	MEVENT mev;
 	
 	//Ajustement du titre et gestion de ce qui ne devrait jamais arriver:
 	if (num_cmd > 0)
@@ -228,32 +251,28 @@ void aide(int num_cmd)
 	
 	//Liste des commandes utilisables ici:
 	mvprintw(LINES - 2, 1, "^Q");
-	mvprintw(LINES - 1, 1, "^F");
-	if (COLS >= 28)
+	mvprintw(LINES - 1, 1, "Enter");
+	if (COLS >= 50)
 	{
-		mvaddch(LINES - 2, 25, ACS_UARROW);
-		mvaddch(LINES - 1, 25, ACS_DARROW);
-		if (COLS >= 74)
-		{mvprintw(LINES - 1, 42, "Enter");}
+		mvaddch(LINES - 2, 35, ACS_UARROW);
+		mvaddch(LINES - 1, 35, ACS_DARROW);
 	}
 	
 	standend();
 	mvhline(LINES - 3, 0, ACS_HLINE, COLS);
 	
-	mvprintw(LINES - 2, 4, "Revenir à l'éditeur");
-	mvprintw(LINES - 1, 4, "Chercher un article");
-	if (COLS >= 28)
+	mvprintw(LINES - 2, 7, "Revenir à l'éditeur");
+	mvprintw(LINES - 1, 7, "Lire l'article sélectionné");
+	if (COLS >= 50)
 	{
-		mvprintw(LINES - 2, 27, "Naviguer dans");
-		mvprintw(LINES - 1, 27, "les articles");
-		if (COLS >= 74)
-		{mvprintw(LINES - 1, 48, "Lire l'article sélectionné");}
+		mvprintw(LINES - 2, 37, "Naviguer dans");
+		mvprintw(LINES - 1, 37, "les articles");
 	}
 	
 	//Titres des colonnes et message de bienvenue:
 	mvprintw(1, marge, "Nom:         | Touche: |        Description:");
 	if (num_cmd >= 0)
-	{print_msg("Bienvenue dans le module d'aide de Coloration! Appuyer sur \"Enter\" pour en savoir plus.");}
+	{print_msg("Bienvenue dans le module d'aide de Coloration! Appuyez sur \"Enter\" pour en savoir plus.");}
 	
 	//Gestion de l'input:
 	while (1)
@@ -289,7 +308,26 @@ void aide(int num_cmd)
 		
 		switch (input)
 		{
+		case KEY_RESIZE:
+			aide(-1);
+			return;
+		
+		case KEY_MOUSE:
+			getmouse(&mev);
+			if (mev.bstate == 65536) //molette vers le haut
+			{goto monter;} //juste pour le fun!
+			if (mev.bstate == 2097152) //molette vers le bas
+			{goto descendre;} //juste pour le fun!
+			else if (mev.y == LINES - 2 && mev.x < 34) //^Q
+			{curs_set(1); rafraichir(); return;}
+			else if (mev.y == LINES - 1 && mev.x < 34) //Enter
+			{aide(selection); aide(-1); return;}
+			else if (mev.y >= 2 && mev.y < LINES - 3 && mev.y + decalage < nbre_cmds + 2) //Clic sur une entrée
+			{aide(mev.y + decalage - 1); aide(-1); return;}
+			break;
+		
 		case KEY_UP:
+		monter: //:)
 			if (selection > 1)
 			{
 				selection--;
@@ -299,6 +337,7 @@ void aide(int num_cmd)
 			break;
 		
 		case KEY_DOWN:
+		descendre: //:)
 			if (selection < nbre_cmds)
 			{
 				selection++;
@@ -306,10 +345,6 @@ void aide(int num_cmd)
 				{decalage++;}
 			}
 			break;
-		
-		case KEY_RESIZE:
-			aide(-1);
-			return;
 		
 		default:
 			if (keyname(input)[0] == '^')
@@ -322,10 +357,6 @@ void aide(int num_cmd)
 					curs_set(1);
 					rafraichir();
 					return;
-				
-				case 'F': //Ctrl-F (^F) = chercher une commande
-					//À venir...
-					break;
 				
 				case 'M': //Ctrl-M (Enter) = lire l'article sélectionné
 					aide(selection);
@@ -352,6 +383,7 @@ void aide_specifique(int num_cmd)
 	#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 	int _x; //Cette variable contiendra le x de la position actuelle. Cette valeur n'est pas utilisée, mais je m'en fout! (d'où le #pragma)
 	#pragma GCC diagnostic warning "-Wunused-but-set-variable"
+	MEVENT mev;
 	
 	_y = getmaxy(stdscr);
 	if (_y < 14)
@@ -405,7 +437,7 @@ void aide_specifique(int num_cmd)
 	if (buff2 != NULL)
 	{
 		attrset(COLOR_PAIR(6)); //texte en rouge
-		printw("\n  [...] Appuyer sur Enter pour afficher la suite.");
+		printw("\n  [...] Appuyez sur Enter pour afficher la suite.");
 		standend();
 	}
 	
@@ -423,14 +455,17 @@ void aide_specifique(int num_cmd)
 	}
 	
 	//Bas de l'écran:
-	mvprintw(LINES - 1, 0, "Appuyer sur Escape pour revenir au manuel.");
+	mvprintw(LINES - 1, 0, "Appuyez sur Escape pour revenir au manuel.");
 	refresh();
 	
 	//Gestion de l'input:
 	do
 	{
 		input = getch();
-		if (!strcmp(keyname(input), "^M") && buff2 != NULL)
+		if (input == KEY_MOUSE)
+		{getmouse(&mev);}
+		
+		if ((!strcmp(keyname(input), "^M") || (input == KEY_MOUSE && (mev.bstate == 4 || mev.bstate == 4096))) && buff2 != NULL)
 		{
 			move(9, 2);
 			attrset(COLOR_PAIR(1)); //texte en vert
@@ -456,7 +491,7 @@ void aide_specifique(int num_cmd)
 			refresh();
 			input = 12;
 		}
-	} while (strcmp(keyname(input), "^M") != 0 && strcmp(keyname(input), "^[") != 0 && strcmp(keyname(input), "^Q") != 0);
+	} while (strcmp(keyname(input), "^M") != 0 && strcmp(keyname(input), "^[") != 0 && strcmp(keyname(input), "^Q") != 0 && !(input == KEY_MOUSE && (mev.bstate == 4 || mev.bstate == 4096)));
 }
 
 
@@ -465,8 +500,11 @@ void param_avances()
 {
 	int input = 0;
 	int selection = 1;
+	bool redemarrage_nec = FALSE;
 	int nbre_accents = 0;
 	char buffer[250];
+	MEVENT mev;
+	bool touche_simulee = FALSE;
 	
 	if (LINES < 6 + nbre_p_avances || COLS < 25)
 	{
@@ -612,21 +650,16 @@ void param_avances()
 		refresh();
 		
 		//Gestion de l'input:
-		do
-		{input = getch();} while (input == -1);
+		if (!touche_simulee)
+		{
+			do
+			{input = getch();} while (input == -1);
+		}
+		else
+		{touche_simulee = FALSE;}
 		
 		switch (input)
 		{
-		case KEY_UP:
-			if (selection > 1)
-			{selection--;}
-			break;
-		
-		case KEY_DOWN:
-			if (selection < nbre_p_avances)
-			{selection++;}
-			break;
-		
 		case KEY_RESIZE:
 			if (LINES < 6 + nbre_p_avances || COLS < 25)
 			{
@@ -638,6 +671,35 @@ void param_avances()
 			{param_avances(); return;}
 			break;
 		
+		case KEY_MOUSE:
+			getmouse(&mev);
+			if (mev.bstate == 65536) //molette vers le haut
+			{input = KEY_UP; touche_simulee = TRUE;}
+			else if (mev.bstate == 2097152) //molette vers le bas
+			{input = KEY_DOWN; touche_simulee = TRUE;}
+			else if (mev.y == LINES - 1)
+			{
+				if (mev.x < 24) //^Q
+				{input = 17; touche_simulee = TRUE;}
+				else if (mev.x < 33) //^A
+				{input = 1; touche_simulee = TRUE;}
+			}
+			else if (mev.y >= 2 && mev.y < nbre_p_avances + 2) //sélection d'un paramètre (/enter?)
+			{selection = mev.y - 1; input = 13; touche_simulee = TRUE;}
+			else if (mev.y == LINES - 4) //^G
+			{input = 7; touche_simulee = TRUE;}
+			break;
+		
+		case KEY_UP:
+			if (selection > 1)
+			{selection--;}
+			break;
+		
+		case KEY_DOWN:
+			if (selection < nbre_p_avances)
+			{selection++;}
+			break;
+		
 		default:
 			#ifdef _ACCENTS_H
 			if (!strcmp(keyname(input), "^G"))
@@ -647,7 +709,7 @@ void param_avances()
 			if (!strcmp(keyname(input), "^A"))
 			{aide(26); curs_set(0); param_avances(); return;}
 			
-			if (!strcmp(keyname(input), "^M"))
+			if (!strcmp(keyname(input), "^M") || input == ' ')
 			{
 				switch (p_avances[selection].type)
 				{
@@ -664,7 +726,7 @@ void param_avances()
 					break;
 				
 				case 'i': //int
-					print_msg("Appuyer sur + pour augmenter ou - pour diminuer la valeur, Enter pour terminer.");
+					print_msg("Appuyez sur + pour augmenter ou - pour diminuer la valeur, Enter pour terminer.");
 					#pragma GCC diagnostic ignored "-Wunused-value" //nécessaire pour ne pas avoir de warning sur le ptr_int++ et ptr_int--
 					do
 					{
@@ -699,7 +761,13 @@ void param_avances()
 					standend();
 					break;
 				}
-				print_msg(NULL);
+				if (p_avances[selection].redemarrage_nec)
+				{redemarrage_nec = TRUE;}
+				
+				if (redemarrage_nec)
+				{print_msg("Vous devrez redémarrer l'application pour appliquer ces changements");}
+				else
+				{print_msg(NULL);}
 			}
 			break;
 		}
@@ -832,8 +900,12 @@ void lire_parametres()
 #ifdef _ACCENTS_H
 
 bool gestion_accents()
+//Interface de gestion des accents (genre de menu principal).
+//Renvoie TRUE lorsque les changements ont bel et bien été enregistrés (sinon FALSE).
 {
 	int selection = 0;
+	bool touche_simulee = FALSE;
+	MEVENT mev;
 	int decalage = 0;
 	int input = ERR;
 	int xi, xf, yi, yf;
@@ -909,11 +981,43 @@ bool gestion_accents()
 		refresh();
 		
 		//Gestion de l'input:
-		do
-		{input = getch();} while (input == -1);
+		if (!touche_simulee)
+		{
+			do
+			{input = getch();} while (input == -1);
+		}
+		else
+		{touche_simulee = FALSE;}
 		
 		switch (input)
 		{
+		case KEY_RESIZE:
+			if (LINES < 6 || COLS < 33)
+			{
+				print_msg("Terminal trop petit pour gérer les accents"); //Ne sera jamais affiché, mais bon...
+				input = 27; //Esc
+				break;
+			}
+			else
+			{return gestion_accents();}
+			break;
+		
+		case KEY_MOUSE:
+			getmouse(&mev);
+			if (mev.bstate == 65536) //molette vers le haut
+			{input = KEY_UP; touche_simulee = TRUE;}
+			else if (mev.bstate == 2097152) //molette vers le bas
+			{input = KEY_DOWN; touche_simulee = TRUE;}
+			else if (mev.y == LINES - 2 && mev.x < 24) //^Q
+			{input = 17; touche_simulee = TRUE;}
+			else if (mev.y == LINES - 2 && mev.x < 33) //^A
+			{input = 1; touche_simulee = TRUE;}
+			else if (mev.y == LINES - 1 && mev.x < 29) //Enter
+			{input = 13; touche_simulee = TRUE;}
+			else if (mev.y > 2 && mev.y < LINES - 3 && mev.y + decalage < 22) //Clic sur une entrée
+			{selection = mev.y + decalage - 2; input = 13; touche_simulee = TRUE;}
+			break;
+		
 		case KEY_UP:
 			if (selection > 0)
 			{
@@ -930,17 +1034,6 @@ bool gestion_accents()
 				{decalage++;}
 				selection++;
 			}
-			break;
-		
-		case KEY_RESIZE:
-			if (LINES < 6 || COLS < 33)
-			{
-				print_msg("Terminal trop petit pour gérer les accents"); //Ne sera jamais affiché, mais bon...
-				input = 27; //Esc
-				break;
-			}
-			else
-			{return gestion_accents();}
 			break;
 		
 		default:
@@ -986,7 +1079,7 @@ bool gestion_accents()
 			mvaddstrc(yi + 4, "Ouvrez le fichier et attribuez la");
 			mvaddstrc(yi + 5, "valeur 1 à \"modification-permise\" si");
 			mvaddstrc(yi + 6, "vous voulez utiliser cette interface.");
-			mvaddstrc(yf - 3, "Appuyer sur \"Enter\" pour continuer.");
+			mvaddstrc(yf - 3, "Appuyez sur \"Enter\" pour continuer.");
 			standend();
 			mvaddstrc(yf - 1, "< OK >");
 			refresh(); //affichage du tout
@@ -1162,6 +1255,10 @@ void modifier_accent(int num)
 			//Rien à faire ici...
 			break;
 		
+		case KEY_MOUSE:
+			strcpy(msg, " Souris non prise en charge: Utilisez les flèches pour vous déplacer ");
+			break;
+		
 		case KEY_UP:
 			if (selection == 1 || selection == 3)
 			{selection--;}
@@ -1220,7 +1317,7 @@ void modifier_accent(int num)
 						mvaddstrc(yi + 5, "manuellement le caractère désiré.");
 						mvaddstrc(yi + 6, "Vous trouverez le nom du fichier dans");
 						mvaddstrc(yi + 7, "les paramètres avancés.");
-						mvaddstrc(yf - 3, "Appuyer sur \"Enter\" pour continuer.");
+						mvaddstrc(yf - 3, "Appuyez sur \"Enter\" pour continuer.");
 						standend();
 						mvaddstrc(yf - 1, "< OK >");
 						refresh(); //affichage du tout
@@ -1231,7 +1328,7 @@ void modifier_accent(int num)
 				}
 				else
 				{
-					mvaddstrc(LINES - 2, " Appuyer sur la touche ou la combinaison de touches à mapper à ce caractère ");
+					mvaddstrc(LINES - 2, " Appuyez sur la touche ou la combinaison de touches à mapper à ce caractère ");
 					do
 					{input = getch();} while (input == -1);
 					if (input == 195)

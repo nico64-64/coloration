@@ -416,6 +416,8 @@ void verifie_syntaxe()
 			{
 				ln->tag = _commentaire;
 				for (fin_commentaire = 0; ln->txt[fin_commentaire] != '\000' && !(ln->txt[fin_commentaire] == '*' && ln->txt[fin_commentaire + 1] == '/'); fin_commentaire++) {}
+				if (!fin_commentaire) //fin de commentaire en début de ligne...
+				{fin_commentaire = 1;}
 				if (ln->txt[fin_commentaire] == '\000')
 				{fin_commentaire = 0;}
 			}
