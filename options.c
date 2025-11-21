@@ -67,7 +67,7 @@ void menu_options()
 			getmouse(&mev);
 			if (mev.bstate == 65536) //molette vers le haut
 			{car = KEY_UP; touche_emulee = TRUE;}
-			if (mev.bstate == 2097152) //molette vers le bas
+			else if (mev.bstate == 2097152) //molette vers le bas
 			{car = KEY_DOWN; touche_emulee = TRUE;}
 			else if (mev.x >= xi && mev.x <= xf && mev.y >= yi && mev.y <= yf)
 			{

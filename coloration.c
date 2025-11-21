@@ -400,7 +400,7 @@ void ouvrir(char nom_nouveau_fichier[])
 	int input = EOF;
 	int pos = 0;
 	char nom[100] = "";
-	char buffer[100];
+	char buffer[110];
 	FILE* nouveau_fichier = NULL;
 	MEVENT mev;
 	
@@ -830,10 +830,14 @@ int souris(MEVENT mev)
 	_________|___________|___________
 	
 	Modificateurs: Shift (pas en desktop), Ctrl, Alt (pas en desktop)
-	
 	*/
 	
-	if (mev.y == LINES - 2)
+	if (mev.bstate == 65536) //molette vers le haut
+	{return 259;} //KEY_UP
+	else if (mev.bstate == 2097152) //molette vers le bas
+	{return 258;} //KEY_DOWN
+	
+	if (mev.y == LINES - 2) //ligne du haut des raccourcis
 	{
 		if (mev.x < 16)
 		{return 17;} //^Q
@@ -852,7 +856,7 @@ int souris(MEVENT mev)
 		else if (mev.x < 137)
 		{/*return 534;*/} //^down
 		else if (mev.x < 153)
-		{return 542;} //M-Home
+		{cmd("DEBUT"); /*return 542; <-plante sur tty*/} //M-Home
 		else if (mev.x < 176)
 		{return 87;} //^W
 		else if (mev.x < 199)
@@ -860,7 +864,7 @@ int souris(MEVENT mev)
 		else if (mev.x < 225)
 		{return 265;} //F1
 	}
-	else if (mev.y == LINES - 1)
+	else if (mev.y == LINES - 1) //ligne du bas des raccourcis
 	{
 		if (mev.x < 16)
 		{return 19;} //^S
@@ -879,7 +883,7 @@ int souris(MEVENT mev)
 		else if (mev.x < 137)
 		{/*return 575;*/} //^up
 		else if (mev.x < 153)
-		{return 537;} //M-end
+		{cmd("FIN"); /*return 537; -> plante sur tty*/} //M-end
 		else if (mev.x < 176)
 		{return 20;} //^T
 		else if (mev.x < 199)
@@ -913,8 +917,28 @@ int main(int argc, char* argv[])
 		{gestion_arguments(argv[compteur]);}
 	}
 	
+	//Ajustement du nom du fichier de réglage (si nécessaire):
+	if (nom_fconfig[0] == '~' && nom_fconfig[1] == '/')
+	{
+		#pragma GCC diagnostic ignored "-Wformat-overflow"
+		for (int compteur = 2; nom_fconfig[compteur] != '\000'; compteur++)
+		{buffer[compteur - 2] = nom_fconfig[compteur-1]; buffer[compteur-1] = nom_fconfig[compteur]; buffer[compteur] = '\000';}
+		sprintf(nom_fconfig, "%s%s", getenv("HOME"), buffer);
+		#pragma GCC diagnostic warning "-Wformat-overflow"
+	}
+	
 	//Lecture des réglages (paramètres avancés):
 	lire_parametres();
+	
+	//Ajustement du nom du fichier de log d'erreurs (si nécessaire):
+	if (nom_ferreur[0] == '~' && nom_ferreur[1] == '/')
+	{
+		#pragma GCC diagnostic ignored "-Wformat-overflow"
+		for (int compteur = 2; nom_ferreur[compteur] != '\000'; compteur++)
+		{buffer[compteur - 2] = nom_ferreur[compteur-1]; buffer[compteur-1] = nom_ferreur[compteur]; buffer[compteur] = '\000';}
+		sprintf(nom_ferreur, "%s%s", getenv("HOME"), buffer);
+		#pragma GCC diagnostic warning "-Wformat-overflow"
+	}
 	
 	//Indication de l'ouverture de l'application si le log des erreurs est activé:
 	if (err_log)
@@ -927,8 +951,18 @@ int main(int argc, char* argv[])
 	if (fichier == NULL)
 	{printf("Impossible d'ouvrir le fichier \"%s\".\nExiste-t-il? Assurez-vous d'entrer le chemin complet ou le chemin relatif à ce dossier.\n\n", nom_fichier); exit(1);}
 	
-	//Lecture de la base de données des accents:
 	#ifdef _ACCENTS_H
+	//Ajustement du nom du fichier de sauvegarde des accents (si nécessaire):
+	if (nom_faccents[0] == '~' && nom_faccents[1] == '/')
+	{
+		#pragma GCC diagnostic ignored "-Wformat-overflow"
+		for (int compteur = 2; nom_faccents[compteur] != '\000'; compteur++)
+		{buffer[compteur - 2] = nom_faccents[compteur-1]; buffer[compteur-1] = nom_faccents[compteur]; buffer[compteur] = '\000';}
+		sprintf(nom_faccents, "%s%s", getenv("HOME"), buffer);
+		#pragma GCC diagnostic warning "-Wformat-overflow"
+	}
+	
+	//Lecture de la base de données des accents:
 	if (!lire_faccents())
 	{cree_faccents();}
 	#endif

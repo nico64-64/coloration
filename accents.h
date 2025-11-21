@@ -81,7 +81,7 @@ _accent liste_accents[20] =
 
 
 //Autres variables:
-char nom_faccents[50] = "accents.txt"; //nom du fichier où est enregistré liste_accents
+char nom_faccents[100] = "~/.config/coloration/accents.txt"; //nom du fichier où est enregistré liste_accents
 bool modification_faccents = TRUE; //indique si on peut modifier faccents
 
 

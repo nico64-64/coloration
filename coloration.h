@@ -13,7 +13,7 @@
 
 
 //Version du programme:
-#define VERSION "0.7.0"
+#define VERSION "0.7.1"
 
 //Valeurs Macros:
 #define NBRE_CAR_MAX_PAR_LIGNE 499
@@ -175,9 +175,9 @@ const int nbre_cmds = 27;
 bool confirmation_quitter = TRUE; //indique si une confirmation doit être demandée avant de fermer un fichier non-enregistré
 bool souris_activee = TRUE; //indique si la souris doit être prise en charge par le programme
 bool err_log = FALSE; //indique si les erreurs doivent être logguées dans un fichier (désactivé par défaut parce qu'à part remplir le fichier de lignes vides / "Initialisation...", ça ne fait rien d'utile)
-char nom_ferreur[50] = "erreurs.txt"; //nom du fichier de log d'erreurs (si activé) (au nombre d'erreurs que j'ai définies, ça ne sert pas vraiment à rien...)
+char nom_ferreur[100] = "erreurs.txt"; //nom du fichier de log d'erreurs (si activé) (au nombre d'erreurs que j'ai définies, ça ne sert pas vraiment à rien...)
 char cmd_compiler_liste[100] = "./createur_liste"; //commande permettant de compiler la liste qu'est le document en cours de modification (excluant le nom du fichier, qui est ajouté après cette string dans compilateur_liste)
-char nom_fconfig[50] = "config.txt"; //nom du fichier de configuration de l'éditeur (soit le fichier où les paramètres avancés sont sauvegardés)
+char nom_fconfig[100] = "~/.config/coloration/config.txt"; //nom du fichier de configuration de l'éditeur (soit le fichier où les paramètres avancés sont sauvegardés)
 
 //Liste des paramètres avancés:
 p_avance p_avances[] =
