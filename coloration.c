@@ -813,6 +813,7 @@ int souris(MEVENT mev)
 //Reçoit le mouse event en paramètre et renvoie une "émulation de touche / caractère" (int).
 //Renvoie ERR s'il n'y a rien à faire (ce n'est pas nécessairement une erreur!).
 {
+	int compteur = 1;
 	/* Boutons de souris:
 	
 	 BOUTON | # | RELÂCHÉ | APPUYÉ | CLIC | DOUBLE CLIC | TRIPLE CLIC
@@ -878,7 +879,7 @@ int souris(MEVENT mev)
 		{return 22;} //^V
 		else if (mev.x < 82)
 		{return 18;} //^R
-		else if (mev.x < 10)
+		else if (mev.x < 110)
 		{return 12;} //^L
 		else if (mev.x < 137)
 		{/*return 575;*/} //^up
@@ -890,6 +891,31 @@ int souris(MEVENT mev)
 		{return 7;} //^G
 		else if (mev.x < 225)
 		{return 4;} //F1
+	}
+	
+	else if (mev.bstate == 4 && mev.y > 0 && mev.x >= 4) //clic gauche dans la zone d'édition
+	{
+		ln_mod = trouve_ligne(premiere_ligne);
+		pos_y = 1;
+		
+		//Position en y:
+		for (compteur = 1; compteur < mev.y && ln_mod != &FIN_FICHIER; compteur++)
+		{
+			if (pos_y < ln_mod->multiligne)
+			{pos_y++;}
+			else
+			{ln_mod = ln_mod->suivant; pos_y = 1;}
+		}
+		if (ln_mod == &FIN_FICHIER)
+		{ln_mod = ln_mod->precedent; mev.y = compteur - 1;}
+		
+		//Position en x:
+		if (pos_y == ln_mod->multiligne && mev.x - 4 > longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5))
+		{mev.x = longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5) + 4;}
+		else if (pos_y < ln_mod->multiligne && mev.x == COLS - 1)
+		{mev.x--;}
+		
+		mv(mev.y, mev.x);
 	}
 	
 	return ERR;

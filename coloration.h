@@ -13,7 +13,7 @@
 
 
 //Version du programme:
-#define VERSION "0.7.1"
+#define VERSION "0.7.2"
 
 //Valeurs Macros:
 #define NBRE_CAR_MAX_PAR_LIGNE 499
