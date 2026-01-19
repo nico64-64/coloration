@@ -1,0 +1,382 @@
+LISTE_OBJETS.TXT
+Fichier contenant la liste des objets du "text adventure game".
+Sera transformé en "liste_objets.c" par "createur_liste.c".
+L'explication de la syntaxe ainsi que d'autres notes explicatives se trouvent à la fin du fichier.
+
+
+-DÉBUT-
+
+* Permanents & Obligatoires: *
+
+JOUEUR
+Nom: moi tarkad
+Descr: Tarkad l'aventurier
+Detail: Vous êtes Tarkad l'aventurier, un jeune homme originaire de la campagne de Satrask. Ceci est votre première aventure. Comme plusieurs autres, vous êtes à la recherche du sceptre perdu de Tantzia.
+Rum: Vous n'êtes pas du coin, ça se voit au premier coup d'oeil...
+Img: aventurier_1.png
+Endroit: RIVAGE_DEPART
+Poids: 100
+Cap: 20
+Vie: 100
+Dég: -1
+Amb: " Comment voulez-vous vous rejoindre vous-même? "
+Ptv: " Vous avez avec vous: "
+
+* Sert de murs au paradis et empêche les personnages de se mêler avec les différents endroits si on leur parle d'un point cardinal: *
+Nom: nord est sud ouest
+Descr: que des nuages à l'horizon...
+Rum: Vous connaissez votre géographie?
+Img: nuages_paradis.png
+Endroit: PARADIS
+Amb: " Il n'y a pas de directions dans cette dimension... "
+
+PARADIS
+Nom: paradis
+Descr: une étendue de nuages à perte de vue
+Detail: Vous ne voyez que des nuages autour de vous. Le ciel est d’un bleu très pur. L’endroit est très calme et serein…
+Img: nuages_paradis.png
+Endroit: NULL
+Cap: 9000
+Lum: 200
+
+Nom: portail vie retour
+Descr: un portail lumineux vous permettant de revenir à la vie
+Detail: Ce portail vous permettra de revenir à la vie, vous en êtes convaincu!
+Img: portail_resurrection.png
+Endroit: PARADIS
+Dest: RIVAGE_DEPART
+Dist: 0
+Amb: " Vous traversez le portail, et vous voilà de retour à la vie! "
+
+
+* Modèles: *
+
+Modèle:
+MUR_SANS_DETAIL
+Nom: mur murs roc pierre
+Descr: les murs de la grotte,
+Endroit: NULL
+Amb: " Vous vous heurtez à une paroi rocheuse unfranchissable. "
+
+Modèle:
+MUR_CREUSÉ
+Nom: mur murs roc pierre
+Descr: les murs de la salle,
+Detail: Vous remarquez plusieurs traces de pioche sur les murs, vous rappelant que vous n'êtes certainement pas le premier à vous aventurer ici.
+Endroit: NULL
+Amb: " Vous ne parvenez pas à trouver de passage dans ce mur. "
+
+Modèle:
+LONG_TUNNEL
+Nom: tunnel couloir corridor galerie
+Descr: un sombre et long couloir creusé dans le roc
+Detail: Ce tunnel, creusé dans le roc de la montagne, est un tunnel des plus banals. Quelques marques de coups de pioche sont visibles sur les murs.
+Endroit: NULL
+Cap: 9000
+
+Modèle:
+TUNNEL_CONTINUANT
+Nom: passage
+Descr: le tunnel se poursuivant vers
+Detail: Le tunnel est relativement droit, bien que vous puissiez y voir quelques courbes. Il ne semble pas y avoir d'entrée creusée sur les côtés, ce qui signifie que vous devez être encore loin du coeur du royaume.
+Endroit: NULL
+Dist: 2
+Amb: " Vous suivez le tunnel encore quelques temps. "
+
+Modèle:
+ENTREE_TUNNEL
+Nom: passage
+Descr: un passage taillé dans le roc,
+Detail: Un arche en pierre en assez mauvais état entoure l'entrée de ce sombre passage relativement droit, mais étroit.
+Endroit: NULL
+Dist: 2
+Amb: " Vous continuez votre route en empruntant le passage "
+
+Modèle:
+INTERSECTION
+Nom: intersection croisement
+Descr: une intersection entre 3 tunnels
+Detail: Vous ne voyez aucune indication qui pourrait vous aider à connaître la destination de ces passage. Si vous aviez pensé à amener du papier, vous auriez certainement pu bénéficier d'une bonne carte...
+Endroit: NULL
+Cap: 9000
+
+
+* Avec le joueur dès le début: *
+
+Nom: repas nourriture provisions
+Descr: vos provisions de départ
+Detail: Ce sont le provisions que vous avez emmenées avec vous avant de partir à l'aventure. S'y trouve l'équivalent d'un repas en pain, légumes, petits fruits et noix.
+Img: panier_nourriture_1.png
+Endroit: JOUEUR
+Poids: 3
+Dég: 0
+Faim: 10
+
+BOURSE_DEPART
+Nom: bourse
+Descr: votre bourse
+Detail: C’est un petit sac en cuir usé servant normalement à contenir vos pièces de monnaie.
+Endroit: JOUEUR
+Poids: 3
+Cap: 6
+Ptv: " Cette bourse contient: "
+
+Nom: pièce argent monnaie piece
+Descr: une petite pièce d'argent
+Detail: C'est une petite pièce ronde en argent gravée de plusieurs symboles usés sur une face, tandis qu'un motif de fleur à moitié effacé orne l'autre.
+Rum: Très utile pour acheter quelque chose.
+Img: pieces_argent.png
+Endroit: BOURSE_DEPART
+Poids: 1
+
+* torche: *
+TORCHE_DEPART_ETEINTE
+Nom: torche flambeau lumière
+Descr: une petite torche en bois éteinte
+Detail: Il s'agit de la torche que vous avez achetée au village de Strösk en prévision de votre aventure. De qualité moyenne (le mieux que vous avez pu vous permettre), elle devrait durer un certain temps, mais vous devrez clairement vous en fabriquer d'autres.
+Rum: Un objet indispensable dans les endroits sombres.
+Img: torche_eteinte_1.png
+Endroit: JOUEUR
+Poids: 2
+Ouv: torche_depart
+Fer: deja_eteint
+
+TORCHE_DEPART_ALLUMEE
+Nom: torche flambeau lumière lumiere feu
+Descr: une petite torche en bois allumée
+Detail: Une petite flamme danse au bout de votre torche.
+Img: torche_allumee_1.png
+Endroit: NULL
+Poids: 2
+Dég: -2
+Lum: 150
+Cond: { obj->luminosite > 0 } { } { if (obj->endroit != NULL) {TORCHE_DEPART_BRULEE->endroit = obj->endroit; obj->endroit = NULL;} }
+Ouv: deja_allume
+Fer: torche_depart
+
+TORCHE_DEPART_BRULEE
+Nom: torche flambeau bois brûlé brule
+Descr: une petite torche en bois brûlée
+Detail: Cette torche n'a plus de combustible et ne s'allumera donc plus. Il s'agissait de la torche que vous aviez achetée à Strösk en prévision de votre aventure. Elle n'est maintenant plus qu'un petit bout de bois noirci...
+Img: torche_brulee_1.png
+Endroit: NULL
+Poids: 2
+Etat: 0
+Cond: { TORCHE_DEPART_ALLUMEE->luminosite <= 0 } { } { }
+
+
+* Point de départ / d'apparition: *
+
+RIVAGE_DEPART
+Nom: plage galets galet
+Descr: une petite plage de galets
+Detail: La plage, composée de galets de rivière arrondis, n'est pas très grande. Elle est entourée par la forêt et borde la rivière sur une très courte distance.
+Img: galets_riviere.png
+Endroit: NULL
+Cap: 9000
+Lum: 200
+
+Nom: forêt foret arbres conifères est sud
+Descr: une dense forêt entourant la plage à l'est et au sud
+Detail: Vous venez tout juste de traverser cette dense forêt de conifères pour vous rendre ici.
+Img: foret_1.png
+Endroit: RIVAGE_DEPART
+Amb: " Il n'est pas question pour vous de revenir sur vos pas après avoir tant voyagé pour arriver ici. "
+
+RIVIERE_EXTERIEURE
+Nom: rivière riviere eau ouest
+Descr: une rivière large et profonde coulant au pied d'une falaise, à l'ouest
+Detail: La rivière coule paresseusement au pied de la falaise, vous bloquant l'accès à celle-ci. Son eau est très froide. Même si le courant est très faible, cette rivière est trop profonde pour être traversée à gué.
+Rum: Cette rivière serait la gardienne de la montagne...
+Img: riviere_falaise.png
+Endroit: RIVAGE_DEPART
+Amb: " La rivière est trop profonde pour que vous puissiez la traverser à gué. "
+
+BARQUE
+Nom: barque bateau chaloupe canot nord
+Descr: une barque en bois échouée sur le rivage, au nord
+Detail: Malgré son piètre état, cette vieille barque en bois semble encore utilisable. De petite taille, elle ne peut accueillir qu'un seul passager. Cette embarcation de fortune constitue le seul moyen visible de traverser la rivière.
+Img: barque_1.png
+Endroit: RIVAGE_DEPART
+Poids: 30
+Cap: 120
+Dist: 2
+Amb: " Vous vous approchez de la barque et commencez à en inspectez la coque, sans rien y remarquer de trop inquiétant. "
+Int: vieille_barque
+
+
+* Entrée de la montagne: *
+
+GROTTE_ENTREE
+Nom: grotte entrée entree stalactite stalagmite
+Descr: l'entrée d'une sombre grotte
+Detail: Cette grotte semble avoir été formée par un ancien ruisseau souterrain qui se jetait dans la rivière. La grotte devient de plus en plus sombre en s'éloignant de l'eau, mais elle ne semble pas rétrécir. Vous ne voyez aucune trace de vos prédécesseurs, hormis la barque que vous avez utilisée pour traverser la rivière.
+Rum: Le royaume sous la montagne compterait des centaines de galeries souterraines!
+Img: petite_grotte_1.png
+Endroit: NULL
+Cap: 9000
+Lum: 200
+
+Nom: rivière riviere eau est
+Descr: une rivière large et profonde bloquant complètement la sortie de la grotte, à l'est
+Detail: La rivière coule paresseusement au pied de la falaise dans laquelle est percée la grotte où vous vous tenez, vous empêchant d'en sortir. Son eau est très froide. Même si le courant est faible, cette rivière est trop profonde pour être traversée à gué.
+Img: riviere_falaise.png
+Endroit: GROTTE_ENTREE
+Amb: " La rivière est trop profonde pour que vous puissiez la traverser à gué. "
+
+Nom: mur roc murs pierre nord sud
+Descr: les murs de la grotte, au nord et au sud
+Detail: Les murs de la grotte sont faits de la même pierre dure que le reste de la falaise. Vous remarquez quelques stalactites et stalagmites près des murs. L'humidité ambiante y est certainement pour quelque chose.
+Endroit: GROTTE_ENTREE
+Amb: " Vous ne parvenez pas à trouver de passages dans le mur. "
+
+BARQUE_INUTILISABLE
+Nom: barque bois bateau chaloupe canot
+Descr: la barque que vous avez empruntée pour vous rendre ici
+Detail: Il s'agit de la vieille barque en bois que vous avez utilisée pour atteindre cette grotte. Depuis votre naufrage, une longue craque fissure sa coque. Si vous vous en êtes tiré avec seulement quelques vêtements mouillés, cette barque, elle, ne naviguera plus jamais.
+Img: vieille_barque.png
+Endroit: GROTTE_ENTREE
+Poids: 30
+Amb: " Cette barque ne vous mènera plus nulle part. "
+Int: barque_en_planches
+
+PREMIERE_PLANCHE_BARQUE_DETRUITE
+Nom: planche bois matériau materiau
+Descr: une planche de bois en relativement bon état
+Endroit: JOUEUR
+Poids: 7
+Etat: 0
+
+Nom: planche bois matériau materiau
+Descr: une planche de bois en relativement bon état
+Endroit: JOUEUR
+Poids: 7
+Etat: 0
+Cond: { !BARQUE_INUTILISABLE->etat } { } { }
+
+Nom: planche bois matériau materiau
+Descr: une planche de bois en relativement bon état
+Endroit: JOUEUR
+Poids: 7
+Etat: 0
+Cond: { !BARQUE_INUTILISABLE->etat } { } { }
+
+Nom: montée côte ouest
+Descr: la grotte montant tranquillement à l'ouest
+Detail: D'aussi loin que vous puissiez voir, la grotte semble s'enfoncer profondément dans la montagne en conservant des dimensions similaires.
+Img: petite_grotte_1.png
+Endroit: GROTTE_ENTREE
+Dest: GROTTE_ENTREE_SUITE
+Dist: 3
+Amb: " Vous vous enfoncez dans la montagne, bien décidé à en découvrir le trésor. Il fait de plus en plus sombre... "
+
+GROTTE_ENTREE_SUITE
+Nom: grotte boyau
+Descr: un long boyau creusé naturellement dans le roc
+Detail: Vous remarquez d'autres traces qui prouvent qu'un ruisseau a bel et bien creusé cette grotte.
+Img: grotte_2.png
+Endroit: NULL
+Cap: 9000
+Lum: 0
+
+Nom: sortie descente dehors extérieur exterieur est
+Descr: la sortie de la grotte, à l'est
+Detail: La sortie de la grotte se situe clairement du côté est, puisque vous y voyez poindre la lumière du soleil.
+Img: grotte_lumineuse.png
+Endroit: GROTTE_ENTREE_SUITE
+Dest: GROTTE_ENTREE
+Dist: 3
+Amb: " Vous descendez la pente douce qui vous mène à la lumière. Vous sentez des courants d'air vous chatouiller les bras et le visage. "
+
+@MUR_SANS_DETAIL
+@Noms: " mur murs pierre roc nord sud "
+@A-d: " au nord et au sud "
+@Endroit: GROTTE_ENTREE_SUITE
+
+Nom: montée côte ouest
+Descr: la grotte montant tranquillement à l'ouest
+Detail: D'aussi loin que vous puissiez voir, la grotte semble s'enfoncer profondément dans la montagne en conservant des dimensions similaires.
+Img: grotte_3.png
+Endroit: GROTTE_ENTREE_SUITE
+Dest: NULL
+Dist: 8
+Amb: " Vous continuez votre route vers le coeur de la montagne.\nAprès quelques temps, le boyau s'ouvre sur une immense caverne! "
+
+-FIN-
+
+
+
+SYNTAXE D'UN OBJET:
+Chaque objet devrait être séparé des autres par une ligne vide.
+Chaque élément (#) de l'objet doit être précédé par son identifiant et situé sur une ligne séparée.
+Les éléments #2, #3 et #7 sont obligatoires, mais tous les autres sont faculatifs. Si aucune valeur n'est donnée, la valeur par défaut sera utilisée.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#1.  (aucun indicateur) Nom du pointeur à créer (si nécessaire) (en majuscule)                                                                                                (par défaut: aucun pointeur)
+#2.  Nom:               Nom(s) de l'objet (1 à 6 noms, incluant les points cardinaux), séparés par des espaces (15 caractères max)                                            (OBLIGATOIRE)
+#3.  Descr:             Courte description de l'objet (ne pas oublier le(s) point(s) cardinal(aux) s'il s'agit d'un passage!) (89 caractères max)                             (OBLIGATOIRE)
+#4.  Detail:            Détails (longue description) de l'objet (329 caractères max)                                                                                          (par défaut: "Vous ne remarquez rien de spécial.")
+#5.  Rum:               Rumeurs (ce que savent/disent les personnages) de l'objet (99 caractères max)                                                                         (par défaut: "Cela ne me dit rien.")
+#6.  Img:               Fichier contenant l'image de l'objet .png placé dans le dossier "source".(29 caractères max, sans espace)                                             (par défaut: aucune_image.png)
+#7.  Endroit:           Endroit où se trouve l'objet (pointeur vers cet endroit)                                                                                              (OBLIGATOIRE)
+#8.  Poids:             Poids de l'objet (nombre positif, inutile d'aller plus haut que les centaines)                                                                        (par défaut: 800)
+#9.  Cap:               Capacité de l'objet à en contenir d'autres (en poids) (nombre positif, inutile d'aller plus haut que les milliers)                                    (par défaut: 0)
+#10. Vie:               Niveau de vie initial (santé) (0 = mort ou non-vivant)                                                                                                (par défaut: 0)
+#11. Conf:              Niveau initial de confiance qu'accorde ce personnage (s'il est vivant!) au joueur (<0 = hostile, >=10 = a confiance)                                  (par défaut: 0)
+#12. Deg:               Dégats (nombre NÉGATIF) que peut causer cet objet lorsqu'utilisé au combat (ou lorsqu'un personnage se bat à mains nues)                              (par défaut: -1)
+#13. Lum:               Luminosité initiale de l'objet (0 = ne produit pas de lumière et n'est pas un lieu naturellement éclairé, 200 = lumière éternelle)                    (par défaut: 0)
+#14. Faim:              Faim assouvie lorsque cet objet est mangé ("valeur nutritive") (-1 = immangeable)                                                                     (par défaut: -1)
+#15. Etat:              État initial de l'objet (pas très utile, puisque ce sera vérifié avec la condition de toute façon) (1 = existe, 0 = n'existe pas)                     (par défaut: 1)
+#16. Cond:              Condition(s) qui permet(tent) l'existence de l'objet                                                                                                  (par défaut: aucune (donc l'objet existe toujours))
+                        (Syntaxe: "Cond: DÉCLARATION { CONDITION } { CODE SI VRAI } { CODE SI FAUX }", où la déclaration est facultative et les "{ CODE SI ... }" peuvent être "{ }" pour seulement changer l'état selon la condition)
+#17. Dest:              Destination (s'il s'agit d'un passage seulement!)                                                                                                     (par défaut: aucune (NULL))
+#18. Imp:               Impression de la destination du passage (là où le joueur croit qu'il va mener) (passage seulement!)                                                   (par défaut: même valeur que la destination)
+#19. Dist:              Distance (duree de la traversée) du passage (passage seulement!)                                                                                      (par défaut: 0)
+#20. Amb:               Ambiance du passage (texte qui sera affiché lorsque le joueur l'utilisera) (doit être entouré par des " séparés par des espaces) (max 139 caractères) (par défaut: "Vs ne pouvez pas vrm vs en approcher plus.")
+#21. Ptv:               Point de vue du joueur par rapport cet objet  (doit être entouré par des " séparés par des espaces) (max 24 caractères)                               (par défaut: "Vous voyez:")
+#22. Ouv:               Nom de la fonction d'ouverture (ou l'allumage) de l'objet (Ne pas oublier de l'ajouter à "ofbd.c"!) (un seul mot)                                     (par défaut: "impossible_ouvrir")
+#23. Fer:               Nom de la fonction de fermeture (ou l'éteignage) de l'objet (Ne pas oublier de l'ajouter à "ofbd.c"!) (un seul mot)                                   (par défaut: "impossible_fermer")
+#24. Deb:               Nom de la fonction permettant de débarrer l'objet (Ne pas oublier de l'ajouter à "ofbd.c"!) (un seul mot)                                             (par défaut: "impossible_debarrer")
+#25. Bar:               Nom de la fonction permettant de barrer l'objet (Ne pas oublier de l'ajouter à "ofbd.c"!) (un seul mot)                                               (par défaut: "impossible_barrer")
+#26. Int:               Nom de la fonction permettant au joueur d’interagir avec l'objet (ne pas oublier de l'ajouter à "ofbd.c") (un seul mot)                               (par défaut: aucune fonction (NULL))
+
+
+MODÈLE D'OBJET:
+Il est possible d'ajouter le mot "Modèle:" juste avant un objet (défini selon la syntaxe ci-dessus) afin que cet objet soit considéré par le programme comme un modèle d'objet,
+	c'est-à-dire que cet objet ne sera PAS retranscrit dans les fichiers générés.
+Cela est très utile lorsqu'on veut créer plusieur objets très semblables. Dans ce cas, on n'aurait qu'à créer un modèle, puis à l'overrider à chaque implémentation.
+Il est donc fortement conseillé de déclarer un "pointeur" (qui ne sera bien sûr pas implémenté) vers chaque modèle.
+
+
+OVERRIDE/COPIE D'UN OBJET:
+Il est possible de copier un objet afin d'en créer un deuxième identique ou légèrement modifié ("overridé").
+Seuls le pointeur vers l'objet, les noms de l'objet, sa description, ses détails, son lieu, son texte d'ambiance, sa destination et son impression de destination peuvent être ainsi modifiés.
+Seuls les objets ayant un pointeur préalablement défini peuvent être copiés/overridés.
+Tous les éléments non-overridés seront copiés depuis l'élément original, à l'exception du pointeur et de la condition.
+Les conditions ne peuvent pas être copiées ni overridées de quelque manière que ce soit. Elles seront toujours ignorées dans ce cas.�
+La syntaxe d'un override est la suivante:                                                                                                                                                     _
+#1. @[Nom du pointeur de l'objet à overrider/copier]                                           Indique quel objet doit être copié/overridé.    ..........................................      \
+OU                                                                                             OU                                                                                               > OBLIGATOIRE (1 des 2)
+#1. @[Nom du pointeur de l'objet à overrider/copier] -> [Nom du pointeur vers ce nouvel objet] Indique quel objet doit être copié/overridé, ainsi que le nom du pointeur vers le nouvel objet._/
+#2. @Noms: " [liste de 1 à 6 noms] "                                                           Donne les noms du nouvel objet.    .......................................................    -_-> facultatif
+#3. @Descr: " [nouvelle description] "                                                         Donne la description du nouvel objet.    .................................................      \
+OU                                                                                             OU                                                                                               > facultatif (1 des 2)
+#3. @A-d: " [mots à ajouter à la fin de la description] "                                      Donne les quelques mots qui doivent être ajoutés à la fin de la descritpion du nouvel objet.   _/
+#4. @Detail: " [nouveaux détails] "                                                            Indique les détails du nouvel objet.    ..................................................    ---> facultatif
+#5. @End: [nouvel endroit]                                                                     Indique l'endroit du nouvel objet.    ....................................................    ---> facultatif
+#6. @Dest: [nouvelle destination (en conservant la même impression de destination]             Donne la nouvelle destination du passage (sans modifier son impression de destination)         \
+#7. @Imp: [nouvelle impression de destination]                                                 Donne la nouvelle impression de destination du passage.    ...............................      \
+OU                                                                                             OU                                                                                               > facultatif ([1er et/ou 2e] OU [3e])
+#6 & #7. @D-i: [nouvelle destination et impression de destination] "                           Donne la nouvelle destination et impression de destination du passage.      ..............     _/
+#8. @Amb: " [nouveau texte d'ambiance] "                                                       Donne le nouveau texte d'ambiance (affiché entre autres lorsque le joueur rejoint l'objet)      \
+OU                                                                                             OU                                                                                               > facultatif (1 des 2)
+#8. @A-a: " [mots à ajouter à la fin du texte d'ambiance] "                                    Donne les quelques mots qui seront ajoutés à la fin du texte d'ambiance.    ..............     _/
+
+
+NOTES:
+- La liste d'objets débute au "-DÉBUT-" et se terminent à la "-FIN-" du document.
+- Tout texte ajouté après la "-FIN-" sera ignoré sans problème, mais le nombre de mots avant le "-DÉBUT-" doit toujours rester le même.
+- Tous les mots entourés par des "*" (séparées de ceux-ci par des espaces) et placés entre 2 objets seront ignorés par le programme.
+- Tous les mots entourés par "/*" et "*/" (séparés des mots par des espaces) placés entre 2 objets seront retranscrits en commentaires dans la liste d'objets ".c" générée.
+- Un pointeur est nécessaire pour chaque lieu ou contenant (incluant les personnages) ainsi que le joueur (obligatoirement nommé "JOUEUR"), qui doit aussi être le premier élément de la liste.
+- Des pointeurs sont aussi utiles pour écrire les fonctions permettant d'ouvrir/fermer/etc. et d'interagir avec un objet.
+- Les fichiers générés doivent avoir les mêmes noms que leurs valeurs par défaut pour êtres utilisées par le programme.
