@@ -1,7 +1,7 @@
 #include "coloration.h"
 
 
-void print_msg(char msg[])
+void print_msg (char msg[])
 //Affiche un message de moins de 300 caractères dans la barre d'état.
 //Efface tout message de la barre d'état si msg est NULL.
 {
@@ -23,7 +23,7 @@ void print_msg(char msg[])
 }
 
 
-int rafraichir()
+int rafraichir ()
 //Redessine l'écran au complet (avec les nouvelles lignes et tout).
 //Renvoie le numéro de la dernière ligne affichée (aussi disponible comme variable globale) ou 0 en cas d'erreur.
 {
@@ -48,7 +48,7 @@ int rafraichir()
 }
 
 
-void bordures()
+void bordures ()
 //Dessine les bordures de la fenêtre principale ainsi que quelques informations.
 //(nom du fichier, nom et version de l'éditeur, liste des commandes, etc.)
 {
@@ -193,7 +193,7 @@ void bordures()
 }
 
 
-void liste_options(int selection)
+void liste_options (int selection)
 //Affiche la liste des options dans le pop-up du menu des options.
 //Reçoit en paramètre l'option présentement sélectionnée, qui sera surlignée.
 //Cette fonction ne doit être appelée que par menu_options!
@@ -219,7 +219,7 @@ void liste_options(int selection)
 }
 
 
-int afficher_ligne(ligne* ln)
+int afficher_ligne (ligne* ln)
 //Affiche une ligne à l'écran (et son numéro de ligne à gauche).
 //Cette ligne (reçue en paramètre) doit déjà avoir été initialisée.
 //Renvoie le numéro de la ligne ou 0 si la ligne ne peut pas être affichée.
@@ -229,6 +229,11 @@ int afficher_ligne(ligne* ln)
 	{return 0;}
 	
 	int max = NBRE_CAR_MAX_PAR_LIGNE + strlen(ln->txt) - longueur_str(ln->txt);
+	int selectionne = 0; //indique si le caractère affiché est sélectionné (10) ou pas (0)
+						 //(les valeurs bizarres servent à créer le bon décalage dans les paires de couleur)
+	attr_t attr = 0;
+	short pair = 0;
+	int yi = y; //position en y du début de la ligne
 	
 	//Affichage du numéro de ligne:
 	mv(y, 0);
@@ -294,37 +299,64 @@ int afficher_ligne(ligne* ln)
 		if (y >= LINES - 3)
 		{return -1;}
 		
+		//Début ou fin de texte sélectionné:
+		if (selection_en_cours \
+			&& ((ln->num > selection.ldebut->num || (selection.ldebut->num == ln->num && (y - yi + 1 > selection.ydebut || (x >= selection.xdebut && y - yi + 1 == selection.ydebut)))) \
+				&& (ln->num < selection.lfin->num || (selection.lfin->num == ln->num && (y - yi + 1 < selection.yfin || (x <= selection.xfin && y - yi + 1 == selection.yfin))))))
+		{
+			if (!selectionne)
+			{
+				selectionne = 10;
+				attr_get(&attr, &pair, NULL);
+				attr &= (A_BOLD | A_UNDERLINE);
+				if (pair < 10)
+				{attrset(COLOR_PAIR(pair + 10) | attr);}
+				else
+				{attrset(COLOR_PAIR(10) | attr);}
+			}
+		}
+		else if (selectionne != 0)
+		{
+			selectionne = 0;
+			attr_get(&attr, &pair, NULL);
+			attr &= (A_BOLD | A_UNDERLINE);
+			if (pair >= 10)
+			{attrset(COLOR_PAIR(pair - 10) | attr);}
+			else
+			{attrset(COLOR_PAIR(0) | attr);}
+		}
+		
 		//Coloration d'un pointeur d'objet overridé:
 		if (ln->tag == _override && coloration_syntaxique)
 		{
 			if (compteur == 1)
-			{attrset(COLOR_PAIR(4));}
+			{attrset(COLOR_PAIR(4 + selectionne));}
 			else if (ln->txt[compteur] == '-' && ln->txt[compteur + 1] == '>')
-			{attrset(COLOR_PAIR(3) | A_BOLD);}
+			{attrset(COLOR_PAIR(3 + selectionne) | A_BOLD);}
 			else if (compteur > 1 && ln->txt[compteur - 2] == '-' && ln->txt[compteur - 1] == '>')
-			{attrset(COLOR_PAIR(4));}
+			{attrset(COLOR_PAIR(4 + selectionne));}
 		}
 		
 		//Coloration d'un élément:
 		if ((ln->tag == _element || ln->tag == _element_ovr) && coloration_syntaxique)
 		{
 			if (ln->tag == _element_ovr && compteur == 1)
-			{attrset(COLOR_PAIR(5));}
+			{attrset(COLOR_PAIR(5 + selectionne));}
 			else if (compteur > 0 && ln->txt[compteur - 1] == ':')
 			{
 				if (ln->type >= _endroit && ln->type <= _d_i)
-				{attrset(COLOR_PAIR(4));} //POINTEUR
+				{attrset(COLOR_PAIR(4 + selectionne));} //POINTEUR
 				else if (ln->type >= _poids && ln->type <= _dist)
-				{attrset(COLOR_PAIR(6));} //nombre
+				{attrset(COLOR_PAIR(6 + selectionne));} //nombre
 				else
-				{standend();}
+				{attrset(COLOR_PAIR(0 + selectionne));}
 			}
 			else if (ln->type >= _nom && ln->type <= _a_a && compteur > 1)
 			{
 				if (ln->txt[compteur] == '"' && ln->txt[compteur - 1] == ' ' && (ln->txt[compteur + 1] == ' ' || ln->txt[compteur+ 1] == '\000'))
-				{attrset(COLOR_PAIR(7) | A_BOLD);}
+				{attrset(COLOR_PAIR(7 + selectionne) | A_BOLD);}
 				else if (ln->txt[compteur] == ' ' && ln->txt[compteur - 1] == '"' && ln->txt[compteur - 2] == ' ')
-				{standend();}
+				{attrset(COLOR_PAIR(0 + selectionne));}
 			}
 		}
 		
@@ -339,9 +371,9 @@ int afficher_ligne(ligne* ln)
 		//Accolades d'une condition:
 		else if (ln->type == _cond && compteur > 0 && (ln->txt[compteur] == '{' || ln->txt[compteur] == '}') && ln->txt[compteur - 1] == ' ' && (ln->txt[compteur + 1] == ' ' || ln->txt[compteur + 1] == '\000') && coloration_syntaxique)
 		{
-			attrset(COLOR_PAIR(7) | A_BOLD);
+			attrset(COLOR_PAIR(7 + selectionne) | A_BOLD);
 			printw("%c", ln->txt[compteur]);
-			standend();
+			attrset(COLOR_PAIR(0 + selectionne));
 		}
 		
 		//Aucune manipulation spéciale nécessaire:
@@ -351,7 +383,7 @@ int afficher_ligne(ligne* ln)
 	
 	//Ligne trop longue:
 	if (longueur_str(ln->txt) > NBRE_CAR_MAX_PAR_LIGNE)
-	{addch(' '); attrset(COLOR_PAIR(8) | A_BOLD); printw("..."); standend();}
+	{addch(' '); attrset(COLOR_PAIR(21) | A_BOLD); printw("..."); standend();}
 	
 	//Écrit un caractère vide de plus (pour compenser lorsqu'on efface):
 	attroff(A_UNDERLINE); //empêche ce caractère de plus d'être souligné (les couleur ou le gras, on s'en fout, mais ça, ça paraît...)

@@ -1,7 +1,7 @@
 #include "outils_graphiques.c"
 
 
-bool est_un_nbre(char str[], char type)
+bool est_un_nbre (char str[], char type)
 //Renvoie TRUE si str contient exclusivement un nombre (on peut ensuite utiliser sscanf pour l'extraire).
 //Renvoie FALSE dans le cas contraire.
 //Le paramètre type permet de préciser quel type de nombres sont acceptés:
@@ -39,7 +39,7 @@ bool est_un_nbre(char str[], char type)
 
 
 #ifdef _ACCENTS_H
-bool est_un_accent(int car)
+bool est_un_accent (int car)
 //Indique si le caractère reçu en paramètre est un accent (défini dans liste_accents).
 //Cette fonction est seulement utile avec un input ncurses!
 //Elle ne détectera pas les accents dans un string.
@@ -55,7 +55,7 @@ bool est_un_accent(int car)
 }
 
 
-bool str_est_un_accent(char multicar[])
+bool str_est_un_accent (char multicar[])
 //Indique si la string reçue en paramètre est un des caractères accentués de liste_accents.
 //Cette fonction n'est d'aucune utilité avec un input ncurses.
 //Elle ne doit servir qu'à identifié un accent (préalablement isolé dans une string de longueur 3) dans une string.
@@ -72,7 +72,7 @@ bool str_est_un_accent(char multicar[])
 #endif
 
 
-bool match_accent(int car, char accent[])
+bool match_accent (int car, char accent[])
 //Transforme un input accentué (format int) en un accent normal pouvant être placé dans une string (2 char).
 //Cet accent (ou la lettre non modifiée si elle n'en est pas un) est storé dans le paramètre accent (passé par référence).
 //Le paramètre accent devrait toujours pointer vers une string d'au moins 3 caractères de long.
@@ -107,7 +107,7 @@ bool match_accent(int car, char accent[])
 }
 
 
-int longueur_str(char str[])
+int longueur_str (char str[])
 //Renvoie la longueur (nombre de caractères) d'une string.
 //Cette fonction agit comme strlen(str), sauf qu'elle tient compte des accents (multicharacter constants).
 //Renvoie -1 en cas d'erreur.
@@ -135,7 +135,7 @@ int longueur_str(char str[])
 }
 
 
-int relativise_pos(char str[], int pos)
+int relativise_pos (char str[], int pos)
 //Trouve la véritable position du curseur dans une string en compensant pour les accents.
 //Reçoit la string en question et la position supposée (position à l'écran) en paramètres.
 //Renvoie pos + le nombre d'accents avant pos.
@@ -163,7 +163,7 @@ int relativise_pos(char str[], int pos)
 }
 
 
-char* insere_car(char str[], int car, unsigned pos, unsigned taille_max)
+char* insere_car (char str[], int car, unsigned pos, unsigned taille_max)
 //Insère le caractère car dans la string str (de taille maximale taille_max), à la position pos.
 //Renvoie la nouvelle string en cas de succès (la string est aussi modifiée directement par adresse).
 //Renvoie ERREUR (et ne fait rien) en cas d'erreur (surtout quand il n'y a pas de place dans str pour insérer car).
@@ -204,7 +204,7 @@ char* insere_car(char str[], int car, unsigned pos, unsigned taille_max)
 }
 
 
-char* efface_car(char str[], unsigned pos)
+char* efface_car (char str[], unsigned pos)
 //Efface le caractère situé à la position pos dans la string str.
 //Fonctionne aussi avec les accents.
 //Renvoie la string mise à jour (mais ce n'est pas nécessaire de l'utiliser, parce qu'elle s'est aussi mise à jour automatiquement, puisque passée par référence).
@@ -230,7 +230,30 @@ char* efface_car(char str[], unsigned pos)
 }
 
 
-ligne* trouve_ligne(int num)
+void debuter_selection ()
+//Remplis la structure de sélection de texte avec les informations initiales de la position actuelle du curseur.
+{
+	char buffer[3];
+	
+	selection_en_cours = FALSE;
+	rafraichir();
+	selection_en_cours = TRUE;
+	selection.ldebut = ln_mod;
+	selection.xdebut = x;
+	selection.ydebut = pos_y;
+	selection.lfin = ln_mod; //évite des erreur de ptr NULL plus tard...
+	
+	buffer[0] = ln_mod->txt[POSITION_ACTUELLE];
+	buffer[1] = ln_mod->txt[POSITION_ACTUELLE + 1];
+	buffer[2] = '\000';
+	if (str_est_un_accent(buffer))
+	{strcpy(selection.txt, buffer);}
+	else
+	{selection.txt[0] = buffer[0]; selection.txt[1] = '\000';}
+}
+
+
+ligne* trouve_ligne (int num)
 //Trouve une ligne à partir de son numéro (et renvoie un pointeur vers elle).
 //Renvoie ERREUR en cas d'erreur.
 {
@@ -246,7 +269,7 @@ ligne* trouve_ligne(int num)
 }
 
 
-ligne* trouve_tag(_tag tag, ligne* depart)
+ligne* trouve_tag (_tag tag, ligne* depart)
 //Trouve et renvoie la première ligne ayant l'étiquette (tag) d'assigneé.
 //Si depart est NULL, la recherche débutera au début du fichier. Sinon, elle débutera à la ligne donnée (inclusivement).
 //Renvoie NULL s'il n'y a pas de ligne ayant cette étiquette d'assignée ou ERREUR en cas d'erreur.
@@ -270,9 +293,9 @@ ligne* trouve_tag(_tag tag, ligne* depart)
 }
 
 
-int compter_lignes(ligne* ln)
+int compter_lignes (ligne* ln)
 //Compte (et renvoie) le nombre de lignes (à l'écran) occupées par la ligne reçue en paramètre.
-//Ce nombre de ligne est aussi mis à jour dans la struct de la ligne (ln->multiligne).
+//Ce nombre de lignes est aussi mis à jour dans la struct de la ligne (ln->multiligne).
 //Renvoie 0 en cas d'erreur
 {
 	if (ln == NULL || ln == ERREUR || ln == &DEBUT_FICHIER || ln == &FIN_FICHIER)
@@ -290,7 +313,7 @@ int compter_lignes(ligne* ln)
 }
 
 
-ligne* insere_ligne(ligne* ln_i, unsigned pos)
+ligne* insere_ligne (ligne* ln_i, unsigned pos)
 //Insère une nouvelle ligne juste avant le caractère occupant la position pos dans la ligne ln_i (tous 2 reçus en paramètres).
 //Renvoie un ptr vers la nouvelle ligne ou ERREUR en cas d'erreur.
 //Il sera nécessaire de rafraichir l'écran si on veut voir la modification.
@@ -340,7 +363,7 @@ ligne* insere_ligne(ligne* ln_i, unsigned pos)
 }
 
 
-bool supprime_ligne(ligne* ln)
+bool supprime_ligne (ligne* ln)
 //Supprime la ligne reçue en paramètre.
 //Si celle-ci n'est pas vide, son contenu sera appendé à la ligne précédente.
 //Renvoie TRUE en cas de succès et FALSE en cas d'erreur.
@@ -376,7 +399,7 @@ bool supprime_ligne(ligne* ln)
 }
 
 
-void verifie_syntaxe()
+void verifie_syntaxe ()
 //Vérifie si la syntaxe du fichier (au complet) correspond à celle d'une liste d'objets et assigne un tag et/ou un type à chaque ligne.
 //Est appelé à la lecture du fichier (donc à l'initialisation du programme) et à la moindre modification de celui-ci.
 {
@@ -522,7 +545,7 @@ void verifie_syntaxe()
 }
 
 
-ligne* init_ligne(int num)
+ligne* init_ligne (int num)
 //Initialise la structure d'une ligne (en la lisant dans le fichier) lorsque le numéro est positif (ne pas oublier d'ensuite vérifier la synatxe du fichier).
 //Libère la structure d'une ligne si le numéro est négatif.
 //Renvoie la dernière ligne du fichier si le numéro est 0.

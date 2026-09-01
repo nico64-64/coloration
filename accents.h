@@ -13,7 +13,7 @@
          / /     \\          / /  |\ \ \
         /  /   ,  \ ,       / /   /|  \ \
        /  /    |\_ /|      / /   / \   \_\
-      /  /  |\/ _ '_| \   / /   /   \    \\
+      /  /  |\/ _ '_|     / /   /   \    \\
      |  /   |/  0 \0\    / |    |    \    \\
      |    |\|      \_\_ /  /    |     \    \\
      |  | |/    \.\ o\o)  /      \     |    \\
@@ -48,7 +48,7 @@ typedef struct _accent
 } _accent;
 
 
-//Liste / Base de données des accents et de leurs valeurs numériques:
+//Liste des accents et de leurs valeurs numériques:
 _accent liste_accents[20] =
 {
 	{"é", "É", 169, 137, "E-aigu"},

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-#Support des accents:
+# Support des accents:
 if [ $1 == --sans-accents ]
 then
 	sed -i 's|#include "accents.h"|//#include "accents.h"|g' coloration.h
@@ -18,12 +18,12 @@ else
 	exit
 fi
 
-#Compilation:
+# Compilation:
 gcc coloration.c -o coloration -Wall -Wextra -lncursesw -ggdb -fsanitize=address
-#-Wall et -Wextra = activent des warnings supplémentaires de gcc
-#-lncursesw = link ncurses wide_characters (ncurses avec accents)
-#-ggdb = dgb debugging symbols
-#-fsanitize=address = débogueur de memory leaks et de Segmentation Faults
+# -Wall et -Wextra = activent des warnings supplémentaires de gcc
+# -lncursesw = link ncurses wide_characters (ncurses avec accents)
+# -ggdb = dgb debugging symbols
+# -fsanitize=address = débogueur de memory leaks et de Segmentation Faults
 
-#Exécuter comme suit:
-#./coloration fichier.txt
+# Exécuter comme suit:
+# ./coloration fichier.txt

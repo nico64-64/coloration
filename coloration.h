@@ -13,7 +13,7 @@
 
 
 //Version du programme:
-#define VERSION "0.7.2"
+#define VERSION "0.7.3"
 
 //Valeurs Macros:
 #define NBRE_CAR_MAX_PAR_LIGNE 499
@@ -29,6 +29,7 @@ typedef enum _type _type;
 typedef struct commande commande;
 typedef struct p_avance p_avance;
 typedef struct ligne ligne;
+typedef struct Selection Selection;
 
 enum _tag
 //Étiquette identifiant le contenu d'une ligne du fichier ouvert.
@@ -106,6 +107,18 @@ struct ligne
 	ligne* suivant; //ligne suivante
 };
 
+struct Selection
+//Structure d'une sélection dans le fichier:
+{
+	ligne* ldebut; //ligne où débute la sélection
+	int xdebut; //position en x du premier caractère sélectionné
+	int ydebut; //décalage multiligne du premier caractère sélectionné
+	char txt[2000]; //texte sélectionné
+	ligne* lfin; //ligne où se termine la sélection
+	int xfin; //position en x du dernier caractère sélectionné
+	int yfin; //décalage multiligne du dernier caractère sélectionné
+};
+
 struct commande
 //Structure d'une commande acceptée par le programme:
 {
@@ -135,14 +148,14 @@ struct p_avance
 commande cmds[] =
 {
 	{0, "", "", "", "", {0, 0, 0}}, //Cette fausse commande doit toujours rester vide! Elle ne sert qu'à décaler les autres commandes et offrir la possibilité d'utiliser le 0 comme valeur spéciale.
-	{1, "Généralités", "", "En apprendre plus sur cet éditeur.", "Coloration est un éditeur de texte TUI (Terminal User Interface) très semblable à Nano (GNU nano).\nLe but de cet éditeur est de faciliter la création et l'édition des fichiers de liste d'objets du projet \"text-adventure game\". Il s'agit d'un projet en cours, donc certaines fonctionnalités ne sont pas encore implantées.\nLa liste (incomplète) des commandes disponibles est toujours affichée dans le bas de l'écran. Vous pouvez aussi consulter ce manuel en appuyant sur Ctrl-A (^A). Vous y trouverez l'intégralité des commandes disponibles.\nCertaines commandes agissent de manière silencieuse, tandis que d'autres affichent un message dans la barre d'état (3e ligne depuis le bas de l'écran) ou encore demandent un input de votre part. Dans ce dernier cas, les 2 lignes du bas de l'écran seront utilisées pour cela.\nLa plutpart du temps, vous pouvez aussi utiliser la souris pour cliquer sur la liste des commandes ou déplacer votre curseur (si sa prise en charge n'a pas été désactivée et que votre terminal le supporte).\n \nNote sur la notation des touches:\nLe symbole \"^\" est utilisé pour représenter la touche Ctrl (exemple: ^A = Ctrl-A), tandis que les touches Alt, Cmd ou Alt-Car sont représentées par \"M-\" (exemple: M-# = Alt-Car #). \"Sh\" est parfois utilisé pour abrévier \"Shift\".", {3, 26, 0}},
-	{2, "Menu des options", "Esc", "Accéder au menu des options.", "Vous pouvez accéder à ce menu en appuyant sur \"Escape\" depuis l'interface principale de l'éditeur.\nCe menu fournis plusieurs raccourcis dont la plupart sont aussi accessibles autrement. Il s'agit toutefois de la seule manière d'accéder aux paramètres avancés et aux crédits.\nUtilisez les flèches pour vous déplacer dans le menu, puis appuyez sur \"Enter\" pour effectuer l'action sélectionnée. Appuyer sur \"Escape\" fermera le menu.", {26, 3, 0}},
+	{1, "Généralités", "", "En apprendre plus sur cet éditeur.", "Coloration est un éditeur de texte TUI (Terminal User Interface) très semblable à Nano (GNU nano).\nLe but de cet éditeur est de faciliter la création et l'édition des fichiers de liste d'objets du projet \"text-adventure game\". Il s'agit d'un projet en cours, donc certaines fonctionnalités ne sont pas encore implantées.\nLa liste (incomplète) des commandes disponibles est toujours affichée dans le bas de l'écran. Vous pouvez aussi consulter ce manuel en appuyant sur Ctrl-A (^A). Vous y trouverez l'intégralité des commandes disponibles.\nCertaines commandes agissent de manière silencieuse, tandis que d'autres affichent un message dans la barre d'état (3e ligne depuis le bas de l'écran) ou encore demandent un input de votre part. Dans ce dernier cas, les 2 lignes du bas de l'écran seront utilisées pour cela.\nLa plupart du temps, vous pouvez aussi utiliser la souris pour cliquer sur la liste des commandes ou déplacer votre curseur (si sa prise en charge n'a pas été désactivée et que votre terminal le supporte).\n \nNote sur la notation des touches:\nLe symbole \"^\" est utilisé pour représenter la touche Ctrl (exemple: ^A = Ctrl-A), tandis que les touches Alt, Cmd ou Alt-Car sont représentées par \"M-\" (exemple: M-# = Alt-Car #). \"Sh\" est parfois utilisé pour abrévier \"Shift\".", {3, 26, 0}},
+	{2, "Menu des options", "Esc", "Accéder au menu des options.", "Vous pouvez accéder à ce menu en appuyant sur \"Escape\" depuis l'interface principale de l'éditeur.\nCe menu fournis plusieurs raccourcis dont la plupart sont aussi accessibles autrement.\nUtilisez les flèches pour vous déplacer dans le menu, puis appuyez sur \"Enter\" pour effectuer l'action sélectionnée. Appuyer sur \"Escape\" fermera le menu.", {26, 3, 0}},
 	{3, "Aide", "^A", "Accéder à cette page.", "Coloration est équipé d'un manuel d'aide intégré, que vous consultez en ce moment.\nOn peut y accéder à presque tous les moments en appuyant sur Ctrl-A.", {1, 26, 2}},
 	{4, "Quitter", "^Q", "Fermer le programme.", "Utilisez Ctrl-Q pour fermer Coloration sans enregistrer vos modifications au fichier ouvert.", {1, 0, 0}},
 	{5, "Enregistrer", "^E", "Enregistrer le fichier.", "Utilisez cette commande pour enregistrer le fichier ouvert. Vous pourrez choisir le nom et l'emplacement du fichier.", {6, 0, 0}},
 	{6, "Sauvegarder", "^S", "Sauvegarder rapidement le fichier.", \
 		"Utilisez cette commande pour sauvegarder rapidement le fichier ouvert.\nVous ne pourrez pas modifier ni le nom, ni l'emplacement du fichier. Utilisez plutôt \"Enregistrer\" pour cela.", {5, 0, 0}},
-	{7, "Ouvrir un fichier", "^N", "Ouvrir un autre fichier ou en créer un.", "Utilisez cette commande pour ouvrir un autre fichier avec Coloration.\nVous devrez entrer le chemin d'accès au fichier depuis l'endroit d'où vous avez démarré Coloration.\nNotez bien que tout changement non sauvegrdé au fichier en cours de modification sera perdu, puisque l'éditeur sera redémarré.\n \nVous pouvez entrer Ctrl-L pour voir la liste des fichiers présents dans ce répertoire avant de choisir.", {1, 5, 6}},
+	{7, "Ouvrir un fichier", "^N", "Ouvrir un autre fichier ou en créer un.", "Utilisez cette commande pour ouvrir un autre fichier avec Coloration.\nVous devrez entrer le chemin d'accès au fichier depuis l'endroit d'où vous avez démarré Coloration.\nNotez bien que tout changement non sauvegardé au fichier en cours de modification sera perdu, puisque l'éditeur sera redémarré.\n \nVous pouvez entrer Ctrl-L pour voir la liste des fichiers présents dans ce répertoire avant de choisir.", {1, 5, 6}},
 	{8, "Aller à", "^L", "Envoyer le curseur à une certaine ligne.", "Utilisez cette commande pour emmener rapidement votre curseur au début d'une certaine ligne du fichier.", {21, 22, 9}},
 	{9, "Trouver & remplacer", "^F", "Trouver (et remplacer) une expression dans le fichier.", "Fonctionnalité à venir.\nÀ Faire!", {21, 22, 8}},
 	{10, "Ligne de commande", "^P / F4", "Envoyer une commande à l'éditeur", "Ouvre une ligne de commande Coloration en bas de l'écran.\n \nVoici la liste des commandes acceptées par cette ligne de commande ainsi qu'une brève description de leur effet ou une référence à l'article approprié de ce manuel:\n- aide -> voir \"Aide\"\n- rafraichir -> voir \"Rafraichir\"\n- ligne / aller / aller à (Argument facultatif: numéro de ligne / \"DEBUT\" / \"FIN\" / \"fin\") -> Emmène le curseur à la ligne fournie en argument ou effectue la commande \"Aller à\" si aucun argument n'est fourni. Effectue la commande \"Aller au -DÉBUT-\" ou \"Aller à la -FIN-\" si l'argument y correspond. Emmène le curseur à la dernière ligne du fichier si l'argument est \"fin\".\n- DEBUT -> voir \"Aller au -DÉBUT-\"\n- FIN -> voir \"Aller à la -FIN-\"\n- compiler -> voir \"Compiler la liste\"\n- terminal / term -> voir \"Accès au terminal\"\n- enregistrer sous / enregistrer / enr (Argument facultatif: nom du fichier) -> Effectue la commande \"Enregistrer\" si aucun argument n'est fourni ou enregistre le fichier ouvert sous le nom fourni (au même endroit).\n- sauvegarder / sauv -> Voir \"Sauvegarder\".\n- ouvrir / nouveau / ouv / nouv -> voir \"Ouvrir un fichier\". Vous pouvez aussi spécifier le nom du fichier en argument.\n- coloration / syntaxe / couleurs -> voir \"Coloration syntaxique\".\n- menu / options -> Voir \"Menu des options\".\n- parametres / param -> voir \"Paramètres avancés\".\n- accents -> voir \"Gestion des accents\".\n- credits -> Affiche la page des crédits de l'éditeur (aussi accessible par le menu des options).\n- visualiser / lister -> Affiche la liste des fichiers situés dans le dossier d'où a été ouvert l'éditeur.\n- quitter -> Ferme le programme.\n", {11, 2, 0}},
@@ -164,7 +177,7 @@ commande cmds[] =
 	{22, "Aller à la -FIN-", "M-End", "Envoyer le curseur à la fin de l'objet.", "Appuyez sur Alt-End pour emmener votre curseur à l'endroit où est écrit \"-FIN-\" dans le fichier ouvert. Il s'agit de la fin d'une liste d'objets du projet \"text-adventure game\" (voir \"Compiler la liste\"), si ce fichier en est une.\nNe fais rien s'il n'y a pas de \"-FIN-\" dans ce fichier.\nDans certains terminaux (exemple: console Linux (tty)), Alt-End n'est pas détecté. Il faut alors passer par la commande correspondante (\"FIN\") (voir \"Ligne de commande\").", {13, 10, 21}},
 	{23, "Rafraichir", "^R", "Redessiner le terminal et afficher les messages d'erreur.", \
 		"Redessine l'écran de Coloration sur le terminal, permettant parfois de régler quelques petits glitchs.\nAffiche aussi tout message d'erreur en attente dans la barre d'état.", {24, 0, 0}},
-	{24, "Débogage", "^D", "Activer ou désactiver le mode débogage.", "Appuyer sur Ctrl-D pour activer/désactiver le mode débogage.\nVous pouvez aussi changer de mode de débogage en appuyant sur M-# (Alt-Car 3). Il y a 4 modes de débogage: \"input\" (affiche le nom de la touche appuyée), \"position\" (affiche la position du curseur dans le fichier), \"tag/type\" (affiche le tag et le type (s'il y a lieu) de la ligne où se trouve le curseur) et \"input (raw)\" (donne la valeur numérique de la touche appuyée).\nCette fonctionnalité est une des seules à ne pas avoir de commande correspondante. Ctrl-D est la seule manière de l'activer.", {23, 25, 26}},
+	{24, "Débogage", "^D", "Activer ou désactiver le mode débogage.", "Appuyez sur Ctrl-D pour activer/désactiver le mode débogage.\nUne fois activé, vous pouvez changer de mode de débogage en entrant M-C M-# (Alt-Car 3).\nIl y a 6 modes de débogage:\n- \"input\" affiche le nom de la touche appuyée\n- \"position\" affiche la position du curseur dans le fichier\n- \"sélection\" affiche des informations sur le texte présentement sélectionné\n- \"tag/type\" affiche le tag et le type (s'il y a lieu) de la ligne où se trouve le curseur\n- \"input (raw)\" donne la valeur numérique de la touche appuyée\n- \"input (full)\" affiche le nom de chaque touche (incluant les touches simulées par l'application) pendant 1 seconde avant l'action.\n \nCette fonctionnalité est une des seules à ne pas avoir de commande correspondante. Ctrl-D est la seule manière de l'activer.", {23, 25, 26}},
 	{25, "Col. syntaxique", "F1", "Activer ou désactiver la coloration syntaxique.", "Active/Désactive la coloration syntaxique.\nCette coloration suit la syntaxe d'un fichier de liste d'objets source du projet \"text-adventure game\" (voir \"Compiler la liste\").\nAssurez-vous d'appuyer sur Fn en même temps que F1 pour que cela fonctionne.\nLa coloration syntaxique suivant la syntaxe attendue, elle n'apparaitra pas si le fichier n'est pas syntaxiquement conforme (voir \"Aller au -DÉBUT-\" et \"Aller à la -FIN-\").", {13, 21, 22}},
 	{26, "Paramètres avancés", "F2", "Modifier certains paramètres avancés.", "Également accessible par le menu des options, les paramètres avancés permettent de modifier le comportement de l'éditeur dans certaines situations.\nLa modification de ces paramètres n'est pas recommandée.", {2, 1, 27}},
 	{27, "Gestion des accents", "F3", "Informations sur le support et la gestion des accents par Coloration.", "Coloration fournit, selon sa version, un support \"minimal\" ou \"complet\" des accents.\nSi seul le support minimal est activé, la plupart des accents déjà présents dans un fichier seront affichés correctement, mais vous ne pourrez pas en en entrer au clavier (tout accent reçu du clavier sera ignoré ou transformé en \"?\").\nVous pouvez vérifier si le support complet est activé en ouvrant les paramètres avancés du programme. Si le support complet est activé, vous pouvez aussi y modifier la gestion des accents en entrant ^G.\n \nPar défaut, seuls les caractères suivants (en majuscule en en minuscule) sont supportés par le programme: àâä éèêë îï ôö ùû ç.\nToutefois, si le support complet des accents est activé, vous pouvez aussi définir manuellement jusqu'à 6 \"accents\" supplémentaires.\nDans ce cas, vous pouvez aussi changer les valeurs numériques associées aux différents caractères dans les paramètres avancés pour que l'éditeur s'adapte à votre clavier.\n \nExplication technique:\nLorsque vous appuyez sur une touche de votre clavier, ncurses envoie une certaine valeur numérique au programme. Cette valeur peut être très grande (comme pour les accents), ce qui nécessite plus qu'un octet. Dans ce cas-ci, le système de gestion des accents ignore le 1er octet, puisque celui-ci est normalement toujours 195 pour tous les caractères communs de la langue française. Cette manière de faire est toutefois très imparfaite, puisqu'elle prend aussi pour acquis que le 2e octet ne sera pas identique à aucune autre valeur numérique possiblement reçue du clavier. C'est normalement le cas, mais si la gestion des accents ne fonctionne pas sur votre machine, c'est certainement à cause de cela.", {26, 1, 0}}
@@ -207,7 +220,7 @@ ligne FIN_FICHIER; //variable dont l'adresse sert à représenter la fin du fich
 //Débogage:
 bool debogage = FALSE; //indique si le mode débogage est activé
 char element_debogue = 'i'; //indique ce qui est débogué (lorsque le mode débogage est activé)
-							//Valeurs possibles: i = input, p = position, t = tag/type, n = input (raw)
+							//Valeurs possibles: i = input, p = position, s = sélection, t = tag/type, n = input (raw), f = input (full)
 							
 //Gestion du fichier ouvert:
 char nom_fichier[100] = ""; //nom du fichier actuellement modifié (buffer assez grand pour (entre autres) accomoder tout le chemin d'accès au fichier, si nécessaire...)
@@ -229,6 +242,8 @@ bool fconfig_particulier = FALSE; //indique si l'utilisateur a spécifié un fco
 bool barre_dispo = TRUE; //indique si un message est présentement affiché dans la barre d'état (0 = occupée, 1 = libre) (très peu utilisé...)
 char msg_en_attente[300] = ""; //indique si un message devrait être réaffiché parce qu'il n'a pas fonctionné
 bool fichier_sauvegarde = FALSE; //indique si le fichier a été modifié depuis la dernière sauvegarde
+bool selection_en_cours = FALSE; //indique si l'usager est a sélectionné du texte
+Selection selection = {NULL, 0, 0, "", NULL, 0, 0};
 
 
 //Fonctions Macros:
@@ -236,6 +251,7 @@ bool fichier_sauvegarde = FALSE; //indique si le fichier a été modifié depuis
 //Affichage général:
 #define mv(position_y, position_x);		move(position_y, position_x); y = position_y; x = position_x; //permet de déplacer le curseur tout en mettant les variables x et y à jour (remplacement de "move")
 #define mvaddstrc(position_y, texte);	mvaddstr(position_y, (COLS - longueur_str(texte)) / 2, texte); //affiche une string centrée (sur une ligne y)
+#define POSITION_ACTUELLE				(relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5))) //permet d'utiliser POSITION_ACTUELLE comme raccourcis pour obtenir la position du curseur dans string de la ligne modifiée
 
 //Initialisation et libération de la mémoire:
 #define init();		for (int _COMPTEUR = 1; init_ligne(_COMPTEUR) != NULL; _COMPTEUR++) {}; verifie_syntaxe(); //initialise toutes les lignes du fichier
@@ -255,8 +271,8 @@ bool fichier_sauvegarde = FALSE; //indique si le fichier a été modifié depuis
 #endif
 
 //Gestion des erreurs et débogage:
-#define msg_printf(txt, ...);		char _INTERNAL_BUFFER_[400]; sprintf(_INTERNAL_BUFFER_, txt, __VA_ARGS__); print_msg(_INTERNAL_BUFFER_); //Affiche un message en style printf (à éviter...)
-#define err_printf(code, txt, ...);	char _INTERNAL_BUFFER[400]; sprintf(_INTERNAL_BUFFER, txt, __VA_ARGS__); erreur(code, _INTERNAL_BUFFER); //Log une erreur en style printf
+#define msg_printf(txt, ...);		char _INTERNAL_BUFFER_[500]; sprintf(_INTERNAL_BUFFER_, txt, __VA_ARGS__); print_msg(_INTERNAL_BUFFER_); //Affiche un message en style printf (à éviter...)
+#define err_printf(code, txt, ...);	char _INTERNAL_BUFFER[500]; sprintf(_INTERNAL_BUFFER, txt, __VA_ARGS__); erreur(code, _INTERNAL_BUFFER); //Log une erreur en style printf
 #define DEBUG(txt, ...);			err_printf(1, txt, __VA_ARGS__); erreur(0, "..."); //macro de débogage (utiliser en style printf)
 #define DEBUG_RADICAL(txt, ...);	err_printf(1, txt, __VA_ARGS__); quitter(-1); erreur(0, "..."); exit(-100); //comme le macro de débogage standard, mais quitte à la fin pour être sûr que le message se rend et que ça ne plante pas
 
@@ -302,7 +318,7 @@ ligne* trouve_tag (_tag tag, ligne* depart); //renvoie la première ligne ayant 
 void verifie_syntaxe (); //vérifie la syntaxe du document (pour la coloration syntaxique)
 
 //outils_graphiques.c:
-int afficher_ligne(ligne* ln); //affiche une ligne du fichier à l'écran
+int afficher_ligne (ligne* ln); //affiche une ligne du fichier à l'écran
 void bordures (); //redessine les bordures (et quelques autres choses) de l'écran
 void liste_options (int selection); //affiche la liste des options du menu des options et surligne l'option reçue en paramètre
 void print_msg (char message[]); //affiche un message dans la barre d'état (ou l'efface si message est NULL)

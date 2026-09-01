@@ -1,7 +1,7 @@
 #include "options.c"
 
 
-void quitter(int code)
+void quitter (int code)
 //Permet de fermer le programme en s'assurant de fermer le fichier modifié et en quittant ncurses.
 //Cette fonction doit obligatoirement être appelée pour fermer le programme.
 //Le paramètre "code" sert uniquement à ne pas fermer le programme après avoir tout fermé s'il vaut -1.
@@ -14,7 +14,7 @@ void quitter(int code)
 }
 
 
-int erreur(int code, char message[])
+int erreur (int code, char message[])
 //Gère les erreurs dans le programme.
 //Log une erreur (et son message de moins de 400 caractères) qui pourra être consultée plus tard si le code est positif.
 //Ces erreurs sont aussi loguées dans ferreur, si possible et que l'option (err_log) est activée.
@@ -97,7 +97,7 @@ int erreur(int code, char message[])
 }
 
 
-void gestion_arguments(char arg[])
+void gestion_arguments (char arg[])
 //Gère les options d'invocation du programme.
 {
 	char* buffer = strtok(arg, "=");
@@ -132,7 +132,7 @@ void gestion_arguments(char arg[])
 }
 
 
-void enregistrer(char nom_sauvegarde[])
+void enregistrer (char nom_sauvegarde[])
 //Enregistre/Sauvegarde le buffer actuellement modifié.
 //Le nom du fichier peut être reçu en paramètre ou pas.
 //Si aucun nom de fichier n'est reçu en paramètre, un nom sera demandé à l'utilisateur.
@@ -225,7 +225,7 @@ void enregistrer(char nom_sauvegarde[])
 }
 
 
-void term()
+void term ()
 //Donne accès au terminal via une ligne de commande.
 //Il est préférable de passer par cmd("terminal") (ou cmd()) pour appeler cette fonction.
 {
@@ -315,7 +315,7 @@ void term()
 }
 
 
-ligne* aller_a(int num)
+ligne* aller_a (int num)
 //Emmène l'utilisateur à une certaine ligne (reçue en paramètre) du fichier.
 //Si num est 0, demande (grâce à une ligne de commande) un numéro de ligne à l'utilisateur et l'y emmène.
 //Renvoie un pointeur vers la ligne en question ou NULL si ce n'est pas un numéro de ligne valide.
@@ -392,7 +392,7 @@ ligne* aller_a(int num)
 }
 
 
-void ouvrir(char nom_nouveau_fichier[])
+void ouvrir (char nom_nouveau_fichier[])
 //Essaie d'ouvrir le fichier dont le nom est fourni en paramètre et redémarre le programme avec ce fichier en argument si le fichier est ouvrable.
 //Affiche un message si le fichier n'est pas ouvrable.
 //Affiche un "dialogue" permettant d'entrer le nom du fichier à ouvrir si NULL est fourni en paramètre.
@@ -493,7 +493,7 @@ void ouvrir(char nom_nouveau_fichier[])
 }
 
 
-bool demande_quitter()
+bool demande_quitter ()
 //Demande à l'utilisateur s'il veut sauvegarder son fichier avant de quitter si le fichier a été modifié depuis la dernière sauvegarde et que le paramètre correspondant est activé.
 //Renvoie TRUE pour quitter ou FALSE si l'utilisateur change d'idée (annulation).
 {
@@ -550,7 +550,7 @@ bool demande_quitter()
 }
 
 
-void cmd(char commande[])
+void cmd (char commande[])
 //Exécute une commande reçue en paramètre.
 //Si ce paramètre est NULL, une commande sera d'abord demandée à l'utilisateur.
 //L'écran sera ensuite redessiné et un message sera peut-être affiché dans la barre d'état.
@@ -653,8 +653,8 @@ void cmd(char commande[])
 		
 		if (!strcmp(mot[1], "(null)"))
 		{buffln = aller_a(0);}
-		else if (!strcmp(mot[1], "DEBUT") || !strcmp(mot[1], "DÉBUT"))
-		{cmd("DÉBUT"); buffln = NULL;}
+		else if (!strcmp(mot[1], "DEBUT"))
+		{cmd("DEBUT"); buffln = NULL;}
 		else if (!strcmp(mot[1], "FIN"))
 		{cmd("FIN"); buffln = NULL;}
 		else if (!strcmp(mot[1], "fin"))
@@ -677,7 +677,7 @@ void cmd(char commande[])
 	}
 	
 	//Aller au -DÉBUT-:
-	else if (!strcmp(mot[0], "DEBUT") || !strcmp(mot[0], "DÉBUT"))
+	else if (!strcmp(mot[0], "DEBUT") || !strcmp(mot[0], "-DEBUT-"))
 	{
 		buffln = trouve_tag(DEBUT, NULL);
 		if (buffln == NULL)
@@ -693,7 +693,7 @@ void cmd(char commande[])
 	}
 	
 	//Aller à la -FIN-:
-	else if (!strcmp(mot[0], "FIN"))
+	else if (!strcmp(mot[0], "FIN") || !strcmp(mot[0], "-FIN-"))
 	{
 		buffln = trouve_tag(FIN, NULL);
 		if (buffln == NULL)
@@ -808,7 +808,7 @@ void cmd(char commande[])
 }
 
 
-int souris(MEVENT mev)
+int souris (MEVENT mev)
 //Transforme un clic de souris en l'input clavier correspondant.
 //Reçoit le mouse event en paramètre et renvoie une "émulation de touche / caractère" (int).
 //Renvoie ERR s'il n'y a rien à faire (ce n'est pas nécessairement une erreur!).
@@ -922,11 +922,12 @@ int souris(MEVENT mev)
 }
 
 
-int main(int argc, char* argv[])
+int main (int argc, char* argv[])
 //Initialise le programme, puis gère la main loop de l'éditeur.
 {
 	int input = ERR; //caractère reçu en input (doit être déclaré int pour accepter les accents, Ctrl-car., etc.)
 	bool touche_emulee = TRUE; //la "1ère touche appuyée/simulée" est en fait un 0 qui sert juste à afficher les messages si nécessaire
+	int emulation_en_attente = 0; //2e touche en attente d'être émulée
 	char buffer[80] = "";
 	int buffint;
 	int buffint2;
@@ -943,14 +944,15 @@ int main(int argc, char* argv[])
 		{gestion_arguments(argv[compteur]);}
 	}
 	
+	
 	//Ajustement du nom du fichier de réglage (si nécessaire):
 	if (nom_fconfig[0] == '~' && nom_fconfig[1] == '/')
 	{
-		#pragma GCC diagnostic ignored "-Wformat-overflow"
+		//#pragma GCC diagnostic ignored "-Wformat-overflow"
 		for (int compteur = 2; nom_fconfig[compteur] != '\000'; compteur++)
 		{buffer[compteur - 2] = nom_fconfig[compteur-1]; buffer[compteur-1] = nom_fconfig[compteur]; buffer[compteur] = '\000';}
 		sprintf(nom_fconfig, "%s%s", getenv("HOME"), buffer);
-		#pragma GCC diagnostic warning "-Wformat-overflow"
+		//#pragma GCC diagnostic warning "-Wformat-overflow"
 	}
 	
 	//Lecture des réglages (paramètres avancés):
@@ -959,11 +961,11 @@ int main(int argc, char* argv[])
 	//Ajustement du nom du fichier de log d'erreurs (si nécessaire):
 	if (nom_ferreur[0] == '~' && nom_ferreur[1] == '/')
 	{
-		#pragma GCC diagnostic ignored "-Wformat-overflow"
+		//#pragma GCC diagnostic ignored "-Wformat-overflow"
 		for (int compteur = 2; nom_ferreur[compteur] != '\000'; compteur++)
 		{buffer[compteur - 2] = nom_ferreur[compteur-1]; buffer[compteur-1] = nom_ferreur[compteur]; buffer[compteur] = '\000';}
 		sprintf(nom_ferreur, "%s%s", getenv("HOME"), buffer);
-		#pragma GCC diagnostic warning "-Wformat-overflow"
+		//#pragma GCC diagnostic warning "-Wformat-overflow"
 	}
 	
 	//Indication de l'ouverture de l'application si le log des erreurs est activé:
@@ -981,11 +983,11 @@ int main(int argc, char* argv[])
 	//Ajustement du nom du fichier de sauvegarde des accents (si nécessaire):
 	if (nom_faccents[0] == '~' && nom_faccents[1] == '/')
 	{
-		#pragma GCC diagnostic ignored "-Wformat-overflow"
+		//#pragma GCC diagnostic ignored "-Wformat-overflow"
 		for (int compteur = 2; nom_faccents[compteur] != '\000'; compteur++)
 		{buffer[compteur - 2] = nom_faccents[compteur-1]; buffer[compteur-1] = nom_faccents[compteur]; buffer[compteur] = '\000';}
 		sprintf(nom_faccents, "%s%s", getenv("HOME"), buffer);
-		#pragma GCC diagnostic warning "-Wformat-overflow"
+		//#pragma GCC diagnostic warning "-Wformat-overflow"
 	}
 	
 	//Lecture de la base de données des accents:
@@ -1012,10 +1014,16 @@ int main(int argc, char* argv[])
 		init_pair(5, COLOR_BLUE, COLOR_BLACK);
 		init_pair(6, COLOR_RED, COLOR_BLACK);
 		init_pair(7, 190, COLOR_BLACK); //jaune-vert sur noir
-		init_pair(8, COLOR_WHITE, COLOR_RED);
-		init_pair(10, COLOR_BLACK, COLOR_WHITE);
-		init_pair(11, COLOR_WHITE, COLOR_BLACK);
-		init_pair(12, COLOR_RED, COLOR_WHITE);
+		init_pair(10, COLOR_BLACK, COLOR_WHITE); //les valeurs de 10 à 19 sont les inverses de celles de 0 à 9
+		init_pair(11, COLOR_GREEN, COLOR_WHITE);
+		init_pair(12, COLOR_YELLOW, COLOR_WHITE);
+		init_pair(13, COLOR_MAGENTA, COLOR_WHITE);
+		init_pair(14, COLOR_CYAN, COLOR_WHITE);
+		init_pair(15, COLOR_BLUE, COLOR_WHITE);
+		init_pair(16, COLOR_RED, COLOR_WHITE);
+		init_pair(17, 190, COLOR_WHITE); //jaune-vert sur noir
+		init_pair(20, COLOR_WHITE, COLOR_BLACK); //normalement pareil à 0, mais utile dans certains rares cas
+		init_pair(21, COLOR_WHITE, COLOR_RED); //autre entrée "anormale"...
 	}
 	else
 	{
@@ -1047,7 +1055,7 @@ int main(int argc, char* argv[])
 	//Main Loop:
 	while (1)
 	{
-		//Débogage de la position ou du tag/type:
+		//Débogage de la position, du tag/type ou de la sélection:
 		if (debogage && barre_dispo)
 		{
 			//Position:
@@ -1057,6 +1065,22 @@ int main(int argc, char* argv[])
 			//Tag/type:
 			else if (element_debogue == 't')
 			{msg_printf("Tag %d (type %d)", ln_mod->tag, ln_mod->type);}
+			
+			//Sélection:
+			else if (element_debogue == 's' && (!selection_en_cours || selection.ldebut == NULL || selection.lfin == NULL))
+			{print_msg("Aucune sélection");}
+			else if (element_debogue == 's')
+			{
+				#pragma GCC diagnostic ignored "-Wformat-overflow" //Je m'assure qu'il n'y en aura pas, d'overflow, en insérant un NULL au caractère 150 de la sélection, au cas où elle serait trop énorme...
+				buffint = strcspn(selection.txt, "\n"); //trouve la position du 1er newline de la string (évidemment, je ne peux pas afficher de newline dans la BARRE d'état...)
+				if (buffint > 150)
+				{buffint = 150;}
+				buffer[0] = selection.txt[buffint];
+				selection.txt[buffint] = '\000';
+				msg_printf("lignes %d.%d à %d.%d: %s", selection.ldebut->num, selection.ydebut, selection.lfin->num, selection.yfin, selection.txt);
+				selection.txt[buffint] = buffer[0];
+				#pragma GCC diagnostic warning "-Wformat-overflow"
+			}
 		}
 		
 		//Prise de l'input:
@@ -1075,7 +1099,7 @@ int main(int argc, char* argv[])
 		{print_msg(NULL);}
 		
 		//Débogage de l'input:
-		if (debogage && element_debogue == 'i') //mode input
+		if (debogage && (element_debogue == 'i' || element_debogue == 'f')) //mode input ou input (full)
 		{
 			if (input == KEY_MOUSE) //débogage de la souris
 			{
@@ -1085,8 +1109,10 @@ int main(int argc, char* argv[])
 			}
 			else
 			{print_msg((char*) keyname(input));} //affichage du caractère reçu (son "nom"...)
-			if (strcmp(keyname(input), "^D") != 0 && strcmp(keyname(input), "M-#") != 0 && strcmp(keyname(input), "^Q") != 0)
+			if (element_debogue == 'i' && strcmp(keyname(input), "^D") != 0 && strcmp(keyname(input), "M-#") != 0 && strcmp(keyname(input), "^Q") != 0)
 			{input = -1;} //dans ce mode de débogage, l'input ne doit pas être interprété, sauf ces 3 keys
+			else if (element_debogue == 'f')
+			{refresh(); sleep(1);}
 		}
 		else if (debogage && element_debogue == 'n') //mode input (raw)
 		{
@@ -1098,12 +1124,15 @@ int main(int argc, char* argv[])
 		switch (input)
 		{
 		case KEY_RESIZE: //on a resizé le terminal
+			selection_en_cours = FALSE;
 			rafraichir();
 			sprintf(buffer, "ligne %d", premiere_ligne); //Pour se sauver du trouble, on va juste envoyer le curseur au début de la première ligne...
 			cmd(buffer);
 			break;
 		
 		case KEY_MOUSE: //clic de souris
+			if (selection_en_cours)
+			{selection_en_cours = FALSE; rafraichir();}
 			getmouse(&mev);
 			input = souris(mev);
 			if (input != 0)
@@ -1216,6 +1245,56 @@ int main(int argc, char* argv[])
 			{mv(y, x + 1);}
 			break;
 		
+		case KEY_SRIGHT: //Shift + flèche droite: sélectionner le prochain caractère
+			if (!selection_en_cours || x != selection.xfin || pos_y != selection.yfin || ln_mod->num != selection.lfin->num)
+			{debuter_selection();}
+			touche_emulee = TRUE;
+			input = KEY_RIGHT;
+			emulation_en_attente = KEY_MARK;
+			break;
+		
+		case KEY_SLEFT: //Shift + flèche gauche: désélectionner le caractère précédent
+			//...
+			break;
+		
+		case KEY_SR: //Shift + flèche haut: désélectionner jusqu'à la ligne précédente
+			//...
+			break;
+		
+		case KEY_SF: //Shift + flèche bas: sélectionner jusqu'à la ligne suivante
+			//...
+			break;
+		
+		case KEY_MARK: //Touche qui n'existe plus sur aucun clavier depuis plusieurs décennies: je l'émule pour indiquer qu'il faut sélectionner un caractère
+			if (strlen(selection.txt) == sizeof(selection.txt) - 1) //1 pour le NULL final, 1 pour un potentiel newline et 1 autre au cas où le nouveau serait un accent
+			{print_msg("Vous ne pouvez pas sélectionner plus de texte que ça"); break;}
+			
+			//Enregistrement du newline s'il y a lieu:
+			if (ln_mod->num == selection.lfin->num + 1)
+			{strcat(selection.txt, "\n");}
+			
+			//Enregistrement du nouveau caractère sélectionné:
+			buffer[0] = ln_mod->txt[POSITION_ACTUELLE];
+			buffer[1] = ln_mod->txt[POSITION_ACTUELLE + 1];
+			buffer[2] = '\000';
+			if (str_est_un_accent(buffer))
+			{strcat(selection.txt, buffer);}
+			else
+			{buffer[1] = '\000'; strcat(selection.txt, buffer);}
+			
+			//Enregistrement du nouveau dernier caractère sélectionné:
+			selection.lfin = ln_mod;
+			selection.xfin = x;
+			selection.yfin = pos_y;
+			
+			//Affichage (on stocke x et y dans des buffer parce que afficher_ligne déplace le curseur):
+			buffint = y;
+			buffint2 = x;
+			mv(y - pos_y + 1, 0);
+			afficher_ligne(ln_mod);
+			mv(buffint, buffint2);
+			break;
+		
 		case KEY_HOME: //Home = début de la ligne
 			x = 4;
 			y += 1 - pos_y;
@@ -1246,6 +1325,8 @@ int main(int argc, char* argv[])
 			break;
 		
 		case KEY_BACKSPACE: //Backspace = Effacer vers l'arrière
+			if (selection_en_cours)
+			{selection_en_cours = FALSE; rafraichir();}
 			fichier_sauvegarde = FALSE;
 			if (x == 4 && pos_y == 1) //effacer un newline
 			{
@@ -1281,19 +1362,16 @@ int main(int argc, char* argv[])
 				buffint2 = ln_mod->multiligne;
 				
 				//Vérifions si le caractère précédent est un accent:
-				buffer[0] = relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)) - 2;
-				buffer[1] = relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)) - 1;
-				buffer[3] = '\000';
-				if (str_est_un_accent(buffer))
+				if (relativise_pos(ln_mod->txt, x - 5 + (pos_y - 1) * (COLS - 5)) + 1 != POSITION_ACTUELLE)
 				{
 					//Effaçage et gestion d'erreur:
-					if (efface_car(ln_mod->txt, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)) - 2) == ERREUR)
+					if (efface_car(ln_mod->txt, relativise_pos(ln_mod->txt, x - 5 + (pos_y - 1) * (COLS - 5))) == ERREUR)
 					{erreur(0, "...");}
 				}
 				else
 				{
 					//Effaçage et gestion d'erreur:
-					if (efface_car(ln_mod->txt, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)) - 1) == ERREUR)
+					if (efface_car(ln_mod->txt, POSITION_ACTUELLE - 1) == ERREUR)
 					{erreur(0, "...");}
 				}
 				
@@ -1320,6 +1398,8 @@ int main(int argc, char* argv[])
 			break;
 		
 		case KEY_DC: //Delete = Effacer vers l'avant
+			if (selection_en_cours)
+			{selection_en_cours = FALSE; rafraichir();}
 			fichier_sauvegarde = FALSE;
 			if (pos_y == ln_mod->multiligne && x == longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5) + 4) //effacer un newline
 			{
@@ -1338,7 +1418,7 @@ int main(int argc, char* argv[])
 				buffint2 = ln_mod->multiligne;
 				
 				//Effaçage, erreurs et revérification de la syntaxe:
-				if (efface_car(ln_mod->txt, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5))) == ERREUR)
+				if (efface_car(ln_mod->txt, POSITION_ACTUELLE) == ERREUR)
 				{erreur(0, "...");}
 				verifie_syntaxe();
 				
@@ -1360,6 +1440,8 @@ int main(int argc, char* argv[])
 			if (isprint(input) || est_un_accent(input))
 			//Caractères imprimables:
 			{
+				if (selection_en_cours)
+				{selection_en_cours = FALSE; rafraichir();}
 				fichier_sauvegarde = FALSE;
 				//Attention: logique et calculs obscurs! Code fortement commenté pour tenter de compenser...
 				
@@ -1367,7 +1449,7 @@ int main(int argc, char* argv[])
 				buffint = x; //L'affichage de la ligne modifiée nous fera perdre notre position, donc on doit la conserver quelque part...
 				mv(y - pos_y + 1, x); //Pour que la ligne s'affiche au bon endroit, le curseur doit être dans la première ligne de la ligne... (le +1 vient du fait que multiligne commence à 1)
 				buffint2 = ln_mod->multiligne; //Cette valeur sera peut-être modifiée par notre ajout, et si c'est le cas, il va falloir redessiner l'écran au complet, alors on doit garder une copie de cette valeur...
-				if (insere_car(ln_mod->txt, input, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5)), sizeof(ln_mod->txt)) == ERREUR) //Insertion du caractère dans la ligne! (relativise_pos compense pour les accents)
+				if (insere_car(ln_mod->txt, input, POSITION_ACTUELLE, sizeof(ln_mod->txt)) == ERREUR) //Insertion du caractère dans la ligne! (relativise_pos compense pour les accents)
 				{erreur(40, "Ce caractère a été détecté comme étant imprimable, mais ne l'est pas. Quoi?!"); erreur(0, "..."); break;} //Ne devrait jamais arriver (sauf si je me plante comme il faut dans mon code), mais bon...
 				verifie_syntaxe(); //Vérification de la syntaxe de cette ligne (ainsi que de toutes les autres...)
 				
@@ -1406,6 +1488,7 @@ int main(int argc, char* argv[])
 					break;
 				
 				case 'A': //Ctrl-A = Aide
+					selection_en_cours = FALSE;
 					cmd("aide");
 					break;
 				
@@ -1445,8 +1528,9 @@ int main(int argc, char* argv[])
 					break;
 				
 				case 'M': //Ctrl-M = Enter
+					selection_en_cours = FALSE;
 					fichier_sauvegarde = FALSE;
-					buffln = insere_ligne(ln_mod, relativise_pos(ln_mod->txt, x - 4 + (pos_y - 1) * (COLS - 5))); //insertion "logique" de la ligne au bon endroit
+					buffln = insere_ligne(ln_mod, POSITION_ACTUELLE); //insertion "logique" de la ligne au bon endroit
 					if (buffln == NULL)
 					{erreur(50, "Erreur lors de l'insertion de la nouvelle ligne!"); erreur(0, "...");}
 					else
@@ -1461,31 +1545,15 @@ int main(int argc, char* argv[])
 						pos_y = 1; //"réinitialisation" du multiligne
 					}
 					break;
-				}
-			}
-			else if (keyname(input)[0] == 'M' && keyname(input)[1] == '-')
-			//Alt-...
-			{
-				switch (keyname(input)[2])
-				{
-				case '#': //Alt-# (en mode débogage) = changer de mode de débogage
-					if (debogage)
-					{
-						if (element_debogue == 'i')
-						{element_debogue = 'p'; print_msg("Mode de débogage: position");}
-						else if (element_debogue == 'p')
-						{element_debogue = 't'; print_msg("Mode de débogage: tag/type");}
-						else if (element_debogue == 't')
-						{element_debogue = 'n'; print_msg("Mode de débogage: input (raw)");}
-						else
-						{element_debogue = 'i'; print_msg("Mode de débogage: input");}
-					}
-					break;
+				
+				//à venir: YFHZXCV
+				//libres: WUOJKB
 				}
 			}
 			else if (keyname(input)[0] == 'K' && keyname(input)[1] == 'E' && keyname(input)[2] == 'Y' && keyname(input)[3] == '_' && keyname(input)[4] == 'F')
 			//F1 à F12
 			{
+				selection_en_cours = FALSE;
 				switch (keyname(input)[6])
 				{
 				case '1': //F1 = Activation/Désactivation de la coloration syntaxique
@@ -1509,6 +1577,22 @@ int main(int argc, char* argv[])
 			}
 			
 			//Combinaisons de touches n'ayant pas de nom standard:
+			
+			else if (keyname(input)[0] == 'M' && keyname(input)[1] == '-' && keyname(input)[2] == '#' && debogage) //Alt-Car-# (en mode débogage) = changer de mode de débogage
+			{
+				if (element_debogue == 'i')
+				{element_debogue = 'p'; print_msg("Mode de débogage: position");}
+				else if (element_debogue == 'p')
+				{element_debogue = 't'; print_msg("Mode de débogage: tag/type");}
+				else if (element_debogue == 't')
+				{element_debogue = 's'; print_msg("Mode de débogage: sélection");}
+				else if (element_debogue == 's')
+				{element_debogue = 'n'; print_msg("Mode de débogage: input (raw)");}
+				else if (element_debogue == 'n')
+				{element_debogue = 'f'; print_msg("Mode de débogage: input (full)");}
+				else
+				{element_debogue = 'i'; print_msg("Mode de débogage: input");}
+			}
 			
 			else if (!strcmp(keyname(input), "kDN5")) //Ctrl-Down = Aller au prochain paragraphe
 			{
@@ -1570,5 +1654,8 @@ int main(int argc, char* argv[])
 			else if (!strcmp(keyname(input), "kEND5")) //Ctrl-End = Aller à la fin du document
 			{cmd("aller fin");}
 		}
+		
+		if (emulation_en_attente != 0 && !touche_emulee)
+		{input = emulation_en_attente; emulation_en_attente = 0; touche_emulee = TRUE;}
 	}
 }

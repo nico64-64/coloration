@@ -1,7 +1,7 @@
 #include "outils_logiques.c"
 
 
-void menu_options()
+void menu_options ()
 //Affiche le menu des options et gère son utilisation.
 //Appelé lorsque l'utilisateur appuie sur Esc.
 {
@@ -106,10 +106,12 @@ void menu_options()
 					return;
 				
 				case 1: //Accéder à l'aide
+					selection_en_cours = FALSE;
 					aide(0);
 					return;
 				
 				case 2: //Modifier les paramètres avancés
+					selection_en_cours = FALSE;
 					param_avances();
 					curs_set(1);
 					return;
@@ -125,6 +127,7 @@ void menu_options()
 					return;
 				
 				case 5: //Afficher les crédits
+					selection_en_cours = FALSE;
 					credits();
 					return;
 				
@@ -147,7 +150,7 @@ void menu_options()
 }
 
 
-void credits()
+void credits ()
 //Affiche les crédits du programme.
 {
 	int input = -1;
@@ -201,7 +204,7 @@ void credits()
 }
 
 
-void aide(int num_cmd)
+void aide (int num_cmd)
 //Affiche le manuel de l'éditeur.
 //Peut afficher l'article portant sur la commande dont le numéro est passé en paramètre ou l'aide interactive générale si cmd vaut 0.
 //La fonction peut aussi s'appeler elle-même avec -1 en arguments pour afficher l'aide interactive générale sans le message de bienvenue.
@@ -371,7 +374,7 @@ void aide(int num_cmd)
 }
 
 
-void aide_specifique(int num_cmd)
+void aide_specifique (int num_cmd)
 //Affiche l'article d'aide associé au numéro (nombre entier supérieur à 0) reçu en paramètre.
 //Doit obligatoirement être appelé par aide(num_cmd) ou aide().
 {
@@ -495,7 +498,7 @@ void aide_specifique(int num_cmd)
 }
 
 
-void param_avances()
+void param_avances ()
 //Permet de modifier les paramètres avancés du programme.
 {
 	int input = 0;
@@ -779,7 +782,7 @@ void param_avances()
 }
 
 
-bool enregistrer_parametres()
+bool enregistrer_parametres ()
 //Enregistre les paramètres avancés actuels dans le fichier de configuration fconfig.
 //Renvoie TRUE en cas de succès et FALSE en cas d'erreur.
 {
@@ -823,7 +826,7 @@ bool enregistrer_parametres()
 }
 
 
-void lire_parametres()
+void lire_parametres ()
 //Lit les paramètres avancés sauvegardés dans le fichier de configuration de l'éditeur (fconfig) et les applique.
 //Ne fait rien s'il n'y a pas de fichier de configuration (utilise donc les réglages par défaut).
 //Cette fonction doit être appelé immédiatement après gestion_arguments, avant l'initialisation du programme et de ncurses.
@@ -899,7 +902,7 @@ void lire_parametres()
 
 #ifdef _ACCENTS_H
 
-bool gestion_accents()
+bool gestion_accents ()
 //Interface de gestion des accents (genre de menu principal).
 //Renvoie TRUE lorsque les changements ont bel et bien été enregistrés (sinon FALSE).
 {
@@ -1110,7 +1113,7 @@ bool gestion_accents()
 }
 
 
-void modifier_accent(int num)
+void modifier_accent (int num)
 //Permet de changer les valeurs numériques d'un accent via une interface ncurses.
 //Doit recevoir le numéro de l'accent (dans liste_accents) en paramètre.
 {
@@ -1127,7 +1130,7 @@ void modifier_accent(int num)
 	bkgd(COLOR_PAIR(10)); //fond blanc!
 	erase();
 	strcat(buffer, liste_accents[num].nom);
-	attrset(COLOR_PAIR(11));
+	attrset(COLOR_PAIR(20));
 	mvhline(LINES - 2, 0, ACS_HLINE, COLS);
 	standend();
 	mvaddstrc(LINES - 2, " Utilisez les flèches pour choisir la valeur à modifier ");
@@ -1154,7 +1157,7 @@ void modifier_accent(int num)
 		mvvline(5, COLS / 2, ACS_VLINE, LINES - 10);
 		
 		//Contour de la boîte en noir:
-		attrset(COLOR_PAIR(11)); //blanc sur noir
+		attrset(COLOR_PAIR(20)); //blanc sur noir
 		mvvline(0, 0, ' ', LINES);
 		mvvline(0, COLS - 1, ' ', LINES);
 		mvhline(0, 0, ' ', COLS);
@@ -1171,13 +1174,13 @@ void modifier_accent(int num)
 		
 		//Majuscule:
 		mvprintw(7, COLS / 4 - longueur_str("Caractère: XXX") / 2 + 1, "Caractère: ");
-		attrset(COLOR_PAIR(11)); //blanc sur noir
+		attrset(COLOR_PAIR(20)); //blanc sur noir
 		addch(' ');
 		addstr(liste_accents[num].majuscule);
 		addch(' ');
 		standend();
 		mvprintw(9, COLS / 4 - longueur_str("Valeur: XXXXX") / 2 + 1, "Valeur: ");
-		attrset(COLOR_PAIR(11)); //blanc sur noir
+		attrset(COLOR_PAIR(20)); //blanc sur noir
 		addch(' ');
 		printw("%d", liste_accents[num].valeur_maj);
 		addch(' ');
@@ -1185,13 +1188,13 @@ void modifier_accent(int num)
 		
 		//Minuscule:
 		mvprintw(7, COLS * 3 / 4 - longueur_str("Caractère: XXX") / 2, "Caractère: ");
-		attrset(COLOR_PAIR(11)); //blanc sur noir
+		attrset(COLOR_PAIR(20)); //blanc sur noir
 		addch(' ');
 		addstr(liste_accents[num].minuscule);
 		addch(' ');
 		standend();
 		mvprintw(9, COLS * 3 / 4 - longueur_str("Valeur: XXXXX") / 2, "Valeur: ");
-		attrset(COLOR_PAIR(11)); //blanc sur noir
+		attrset(COLOR_PAIR(20)); //blanc sur noir
 		addch(' ');
 		printw("%d", liste_accents[num].valeur_min);
 		addch(' ');
@@ -1216,7 +1219,7 @@ void modifier_accent(int num)
 			{
 				if (compteur == selection)
 				{
-					attrset(COLOR_PAIR(12) | A_BOLD);
+					attrset(COLOR_PAIR(16) | A_BOLD);
 					mvaddstr(7 + compteur * 2, 3, "->");
 					standend();
 				}
@@ -1227,7 +1230,7 @@ void modifier_accent(int num)
 			{
 				if (compteur == selection)
 				{
-					attrset(COLOR_PAIR(12) | A_BOLD);
+					attrset(COLOR_PAIR(16) | A_BOLD);
 					mvaddstr(3 + compteur * 2, COLS / 2 + 2, "->");
 					standend();
 				}
@@ -1295,7 +1298,7 @@ void modifier_accent(int num)
 						yf = yi + 11;
 						
 						//Redessine les bordures du pop-up:
-						attrset(COLOR_PAIR(11)); //blanc sur noir
+						attrset(COLOR_PAIR(20)); //blanc sur noir
 						mvhline(yi, xi, ACS_HLINE, 40);
 						mvhline(yf, xi, ACS_HLINE, 40);
 						mvvline(yi, xi, ACS_VLINE, 11);
@@ -1349,7 +1352,7 @@ void modifier_accent(int num)
 		}
 		
 		erase();
-		attrset(COLOR_PAIR(11));
+		attrset(COLOR_PAIR(20));
 		mvhline(LINES - 2, 0, ACS_HLINE, COLS);
 		standend();
 	}
@@ -1358,7 +1361,7 @@ void modifier_accent(int num)
 }
 
 
-bool cree_faccents()
+bool cree_faccents ()
 //Crée un fichier contenant les accents et leurs valeurs numériques associées pour pouvoir les enregistrer.
 //Sera appelé pour mettre à jour faccents s'il est modifiée via l'interface du programme.
 //Devrait aussi être appelé dès l'initialisation si le fichier n'existe pas déjà.
@@ -1400,7 +1403,7 @@ bool cree_faccents()
 }
 
 
-bool lire_faccents()
+bool lire_faccents ()
 //Ouvre et lis le fichier contenant la "base de données" des accents (s'il existe).
 //Appelé lors de l'initialisation seulement.
 //Renvoie TRUE si le fichier existe et qu'il a pu être lu au complet avec succès et FALSE dans le cas contraire.
