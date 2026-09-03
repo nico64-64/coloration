@@ -386,6 +386,14 @@ int afficher_ligne (ligne* ln)
 	{addch(' '); attrset(COLOR_PAIR(21) | A_BOLD); printw("..."); standend();}
 	
 	//Écrit un caractère vide de plus (pour compenser lorsqu'on efface):
+	if (selectionne != 0) //Ce caractère vide ne doit par contre pas être sélectionné!
+	{
+		attr_get(NULL, &pair, NULL);
+		if (pair >= 10)
+		{attrset(COLOR_PAIR(pair - 10));}
+		else
+		{standend();}
+	}
 	attroff(A_UNDERLINE); //empêche ce caractère de plus d'être souligné (les couleur ou le gras, on s'en fout, mais ça, ça paraît...)
 	getyx(stdscr, y, x);
 	if (x <= COLS - 2)

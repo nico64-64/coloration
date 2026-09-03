@@ -233,8 +233,6 @@ char* efface_car (char str[], unsigned pos)
 void debuter_selection ()
 //Remplis la structure de sélection de texte avec les informations initiales de la position actuelle du curseur.
 {
-	char buffer[3];
-	
 	selection_en_cours = FALSE;
 	rafraichir();
 	selection_en_cours = TRUE;
@@ -242,14 +240,7 @@ void debuter_selection ()
 	selection.xdebut = x;
 	selection.ydebut = pos_y;
 	selection.lfin = ln_mod; //évite des erreur de ptr NULL plus tard...
-	
-	buffer[0] = ln_mod->txt[POSITION_ACTUELLE];
-	buffer[1] = ln_mod->txt[POSITION_ACTUELLE + 1];
-	buffer[2] = '\000';
-	if (str_est_un_accent(buffer))
-	{strcpy(selection.txt, buffer);}
-	else
-	{selection.txt[0] = buffer[0]; selection.txt[1] = '\000';}
+	selection.txt[0] = '\000';
 }
 
 
@@ -573,7 +564,15 @@ ligne* init_ligne (int num)
 		
 		nouv_ligne = (ligne*) malloc(sizeof(ligne));
 		if (anc_ligne == NULL) //1ère fois, 1ère ligne
-		{anc_ligne = &DEBUT_FICHIER; fgetpos(fichier, &pos_max); DEBUT_FICHIER.precedent = NULL; DEBUT_FICHIER.num = 0; FIN_FICHIER.num = 0; FIN_FICHIER.precedent = NULL; FIN_FICHIER.suivant = NULL;}
+		{
+			anc_ligne = &DEBUT_FICHIER;
+			fgetpos(fichier, &pos_max);
+			DEBUT_FICHIER.precedent = NULL;
+			DEBUT_FICHIER.num = 0;
+			FIN_FICHIER.num = 0;
+			FIN_FICHIER.precedent = NULL;
+			FIN_FICHIER.suivant = NULL;
+		}
 		fsetpos(fichier, &pos_max);
 		nouv_ligne->pos = pos_max;
 		nouv_ligne->precedent = &DEBUT_FICHIER;

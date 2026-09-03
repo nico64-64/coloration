@@ -1060,7 +1060,7 @@ int main (int argc, char* argv[])
 		{
 			//Position:
 			if (element_debogue == 'p')
-			{msg_printf("Ligne #%d.%d, Col. #%d", ln_mod->num, pos_y, x-4);}
+			{msg_printf("Ligne #%d.%d, Col. #%d", ln_mod->num, pos_y, x - 4);}
 			
 			//Tag/type:
 			else if (element_debogue == 't')
@@ -1077,7 +1077,7 @@ int main (int argc, char* argv[])
 				{buffint = 150;}
 				buffer[0] = selection.txt[buffint];
 				selection.txt[buffint] = '\000';
-				msg_printf("lignes %d.%d à %d.%d: %s", selection.ldebut->num, selection.ydebut, selection.lfin->num, selection.yfin, selection.txt);
+				msg_printf("lignes %d.%d (%d) à %d.%d (%d): %s", selection.ldebut->num, selection.ydebut, selection.xdebut - 4, selection.lfin->num, selection.yfin, selection.xfin - 4, selection.txt);
 				selection.txt[buffint] = buffer[0];
 				#pragma GCC diagnostic warning "-Wformat-overflow"
 			}
@@ -1246,15 +1246,20 @@ int main (int argc, char* argv[])
 			break;
 		
 		case KEY_SRIGHT: //Shift + flèche droite: sélectionner le prochain caractère
-			if (!selection_en_cours || x != selection.xfin || pos_y != selection.yfin || ln_mod->num != selection.lfin->num)
+			if (!selection_en_cours || ((ln_mod->num != selection.lfin->num || x != selection.xfin + 1 || pos_y != selection.yfin) && (ln_mod->num != selection.lfin->num || x != 4 || pos_y != selection.yfin + 1 || selection.xfin != COLS - 2) && (ln_mod->num != selection.lfin->num + 1 || x != 4 || pos_y != 1 || selection.txt[strlen(selection.txt) - 1] != '\n')))
 			{debuter_selection();}
 			touche_emulee = TRUE;
-			input = KEY_RIGHT;
-			emulation_en_attente = KEY_MARK;
+			input = KEY_SELECT;
+			emulation_en_attente = KEY_RIGHT;
 			break;
 		
 		case KEY_SLEFT: //Shift + flèche gauche: désélectionner le caractère précédent
-			//...
+			if (selection_en_cours && ((ln_mod->num == selection.lfin->num && ((x == selection.xfin + 1 && pos_y == selection.yfin) || (x == 4 && pos_y == selection.yfin + 1 && selection.xfin == COLS - 2))) || (ln_mod->num == selection.lfin->num + 1 && x == 4 && pos_y == 1 && selection.yfin == selection.lfin->multiligne && selection.xfin == 4 + longueur_str(ln_mod->precedent->txt) % (COLS - 5))))
+			{
+				touche_emulee = TRUE;
+				input = KEY_LEFT;
+				emulation_en_attente = KEY_MARK;
+			}
 			break;
 		
 		case KEY_SR: //Shift + flèche haut: désélectionner jusqu'à la ligne précédente
@@ -1262,25 +1267,109 @@ int main (int argc, char* argv[])
 			break;
 		
 		case KEY_SF: //Shift + flèche bas: sélectionner jusqu'à la ligne suivante
-			//...
+			if (ln_mod->suivant == &FIN_FICHIER && pos_y == ln_mod->multiligne)
+			{print_msg("Vous avez atteint la fin du fichier.");}
+			else
+			{
+				if (!selection_en_cours || ((ln_mod->num != selection.lfin->num || x != selection.xfin + 1 || pos_y != selection.yfin) && (ln_mod->num != selection.lfin->num || x != 4 || pos_y != selection.yfin + 1 || selection.xfin != COLS - 2) && (ln_mod->num != selection.lfin->num + 1 || x != 4 || pos_y != 1 || selection.txt[strlen(selection.txt) - 1] != '\n')))
+				{debuter_selection();}
+				if (y == LINES - 4)
+				{premiere_ligne++; rafraichir(); y -= trouve_ligne(premiere_ligne - 1)->multiligne;}
+				buffint2 = x - 1; //position du dernier caractère à sélectionner sur la prochaine ligne
+				
+				//Trouve combien de caractères il faut sélectionner sur la ligne actuelle:
+				if (pos_y == ln_mod->multiligne)
+				{buffint = longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5) + 4;}
+				else
+				{buffint = COLS - 2;}
+				if (strlen(selection.txt) + buffint - x > sizeof(selection.txt) - 3)
+				{print_msg("Vous ne pouvez pas sélectionner autant de texte d'un coup"); break;}
+				
+				//Sélectionne tout le reste de cette ligne:
+				for (; x < buffint; x++)
+				{
+					buffer[0] = ln_mod->txt[POSITION_ACTUELLE];
+					buffer[1] = ln_mod->txt[POSITION_ACTUELLE + 1];
+					buffer[2] = '\000';
+					if (str_est_un_accent(buffer))
+					{strcat(selection.txt, buffer);}
+					else
+					{buffer[1] = '\000'; strcat(selection.txt, buffer);}
+				}
+				strcat(selection.txt, "\n");
+				
+				//Calcule la position finale sur la prochaine ligne:
+				if (pos_y == ln_mod->multiligne)
+				{
+					ln_mod = ln_mod->suivant;
+					pos_y = 1;
+					if (!ln_mod->tag) //ligne vide
+					{selection.lfin = ln_mod->precedent; selection.yfin = ln_mod->precedent->multiligne; selection.xfin = x;}
+					else
+					{selection.lfin = ln_mod; selection.yfin = 1;}
+				}
+				else
+				{selection.yfin++; pos_y++;}
+				mv(y + 1, 4);
+				if (buffint2 > longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5) + 4)
+				{buffint2 = longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5) + 4 - 1;}
+				if (strlen(selection.txt) + buffint2 - x > sizeof(selection.txt) - 3)
+				{
+					if (pos_y == 1)
+					{
+						ln_mod = ln_mod->precedent;
+						selection.lfin = ln_mod;
+						pos_y = ln_mod->multiligne;
+					}
+					else
+					{pos_y--;}
+					selection.yfin = pos_y;
+					x = longueur_str(ln_mod->txt) - (ln_mod->multiligne - 1) * (COLS - 5) + 4;
+					selection.xfin = x;
+					mv(y - 1, x);
+					print_msg("Vous ne pouvez pas sélectionner autant de texte d'un coup");
+					break;
+				}
+				
+				//Sélectionne le nécessaire sur cette 2e ligne:
+				for (; x < buffint2; x++)
+				{
+					buffer[0] = ln_mod->txt[POSITION_ACTUELLE];
+					buffer[1] = ln_mod->txt[POSITION_ACTUELLE + 1];
+					buffer[2] = '\000';
+					if (str_est_un_accent(buffer))
+					{strcat(selection.txt, buffer);}
+					else
+					{buffer[1] = '\000'; strcat(selection.txt, buffer);}
+				}
+				
+				//Trouve la position finale:
+				if (ln_mod->tag != 0)
+				{selection.xfin = x; x++;}
+				mv(y, x);
+				rafraichir();
+			}
 			break;
 		
-		case KEY_MARK: //Touche qui n'existe plus sur aucun clavier depuis plusieurs décennies: je l'émule pour indiquer qu'il faut sélectionner un caractère
-			if (strlen(selection.txt) == sizeof(selection.txt) - 1) //1 pour le NULL final, 1 pour un potentiel newline et 1 autre au cas où le nouveau serait un accent
+		case KEY_SELECT: //Touche qui n'existe plus sur aucun clavier depuis plusieurs décennies: je l'émule pour indiquer qu'il faut sélectionner le caractère qui se trouve sous le curseur
+			if (strlen(selection.txt) == sizeof(selection.txt) - 3) //1 pour le NULL final, 1 pour un potentiel newline et 1 autre au cas où le nouveau serait un accent
 			{print_msg("Vous ne pouvez pas sélectionner plus de texte que ça"); break;}
 			
 			//Enregistrement du newline s'il y a lieu:
-			if (ln_mod->num == selection.lfin->num + 1)
+			if (x - 4 == longueur_str(ln_mod->txt) % (COLS - 5) && pos_y == ln_mod->multiligne)
 			{strcat(selection.txt, "\n");}
 			
 			//Enregistrement du nouveau caractère sélectionné:
-			buffer[0] = ln_mod->txt[POSITION_ACTUELLE];
-			buffer[1] = ln_mod->txt[POSITION_ACTUELLE + 1];
-			buffer[2] = '\000';
-			if (str_est_un_accent(buffer))
-			{strcat(selection.txt, buffer);}
 			else
-			{buffer[1] = '\000'; strcat(selection.txt, buffer);}
+			{
+				buffer[0] = ln_mod->txt[POSITION_ACTUELLE];
+				buffer[1] = ln_mod->txt[POSITION_ACTUELLE + 1];
+				buffer[2] = '\000';
+				if (str_est_un_accent(buffer))
+				{strcat(selection.txt, buffer);}
+				else
+				{buffer[1] = '\000'; strcat(selection.txt, buffer);}
+			}
 			
 			//Enregistrement du nouveau dernier caractère sélectionné:
 			selection.lfin = ln_mod;
@@ -1292,6 +1381,39 @@ int main (int argc, char* argv[])
 			buffint2 = x;
 			mv(y - pos_y + 1, 0);
 			afficher_ligne(ln_mod);
+			mv(buffint, buffint2);
+			break;
+		
+		case KEY_MARK: //Touche qui n'existe plus sur aucun clavier depuis plusieurs décennies: je l'émule pour indiquer qu'il faut désélectionner le caractère qui se trouve tout de suite après le curseur
+			buffer[0] = selection.txt[strlen(selection.txt) - 2];
+			buffer[1] = selection.txt[strlen(selection.txt) - 1];
+			buffer[2] = '\000';
+			if (str_est_un_accent(buffer))
+			{selection.txt[strlen(selection.txt) - 2] = '\000';}
+			else
+			{selection.txt[strlen(selection.txt) - 1] = '\000';}
+			
+			buffint = y;
+			buffint2 = x;
+			if (!strlen(selection.txt))
+			{selection_en_cours = FALSE;}
+			if (!strlen(selection.txt) && ln_mod->num == selection.lfin->num - 1) //efface la marque de sélection
+			{
+				mv(y - pos_y + 1 + ln_mod->suivant->multiligne, 0);
+				afficher_ligne(trouve_ligne(ln_mod->num + 1));
+			}
+			else
+			{
+				selection.lfin = ln_mod;
+				if (x == 4 && pos_y > 1) //changement de pos_y
+				{selection.xfin = COLS - 2; selection.yfin = pos_y - 1;}
+				else if (x == 4) //changement de ligne
+				{selection.lfin = selection.lfin->precedent; selection.yfin = selection.lfin->multiligne; selection.xfin = 4 + longueur_str(selection.lfin->txt) % (COLS - 5);}
+				else
+				{selection.xfin = x - 1; selection.yfin = pos_y;}
+				mv(y - pos_y + 1, 0);
+				afficher_ligne(ln_mod);
+			}
 			mv(buffint, buffint2);
 			break;
 		
